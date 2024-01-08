@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using Microsoft.IdentityModel.Tokens;
 using Xamarin.Essentials;
 using System.Threading;
+using Android.Text;
+using Android.Util;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
@@ -13,6 +15,7 @@ using System.Threading;
 
 namespace Main_App.Views
 {
+    #region Custom Classes
     public class Product
     {
         public Guid Id { get; set; }
@@ -35,16 +38,12 @@ namespace Main_App.Views
         public void SetLon(double value) { lon = value; }
     }
 
-    public class Vehicle
+    public class ValueSheet
     {
         private string[] atts = new string[9];
         int count = 0;
-        
-        public Vehicle()
-        {
 
-        }
-
+        public ValueSheet() { }
         public void SetAtrribute(int index, string value)
         {
             if (count >= 9)
@@ -54,26 +53,29 @@ namespace Main_App.Views
             atts[index] = value;
             count += 1;
         }
-
         public string GetAttribute(int index)
         {
             if (atts[index].IsNullOrEmpty()) { return string.Empty; }
             return atts[index];
         }
     }
-
+    public class Vehicle : ValueSheet
+    {
+        
+    }
+    public class Route : ValueSheet
+    {
+    }
+    #endregion
 
     public partial class HomePage : ContentPage
     {
-        private string connection_string;
-
-        private List<Vehicle> vehicles;
-        private List<Label> labels;
+        private List<ValueSheet> vehicles;
+        private List<ValueSheet> routes;
         private List<Frame> frames;
         Location userLocation;
-
         HttpClient client;
-        static string text = "https://ttc-recieve-html.azurewebsites.net/api/GetFullTTCtable?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ==";
+
         public HomePage()
         {
             InitializeComponent();
@@ -134,10 +136,11 @@ namespace Main_App.Views
             return frame;
         }
 
+        #region GeoLocation Functions
         /* Function gets location via geolocation, then compares the data in the list by device's location*/
-        private void CompareRoutesByLocation(Location user_location)
+        private void CompareVehiclesByLocation(Location user_location)
         {
-            vehicles.Sort(delegate(Vehicle x, Vehicle y)
+            vehicles.Sort(delegate(ValueSheet x, ValueSheet y)
             {
                 if (x == null && y == null) return 0;
                 else if (x == null) return -1;
@@ -152,24 +155,51 @@ namespace Main_App.Views
             });
         }
 
+        private async Task GetCurrentLocation()
+        {
+            try
+            {
+                var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
+                userLocation = await Geolocation.GetLastKnownLocationAsync();
+                userLocation = await Geolocation.GetLocationAsync(request);
+            }
+            catch (FeatureNotSupportedException fnsEx)
+            {
+                // Not supported on device.
+            }
+            catch (FeatureNotEnabledException fneEx)
+            {
+                // Not enabled on device
+            }
+            catch (PermissionException pEx)
+            {
+                // If no permission
+            }
+            catch (Exception ex)
+            {
+                // Basically, unable to get location!
+            }
+        }
+        #endregion
 
         /* Async functions */
-        private async Task LoadAttributesIntoClasses(string[] values)
+        private async Task LoadAttributesIntoClasses(string content, List<ValueSheet> list)
         {
+            string[] values = content.Split(',');
+            list = new List<ValueSheet>(values.Length / 9); // Since we know there is 9 values
             int count = 1;
-            vehicles = new List<Vehicle>(values.Length / 9);
-            Vehicle new_vehicle = new Vehicle();
+            ValueSheet new_value = new ValueSheet();
             foreach (string str in values)
             {
                 if (str.IsNullOrEmpty()) { return; }
-                // Add new vehicle into the list after count is done. Then create a new, temporary vehicle variable
+                // Add new ValueSheet into the list after count is done. Then create a new, temporary vehicle variable
                 if (count > 9)
                 {
-                    vehicles.Add(new_vehicle);
+                    list.Add(new_value);
                     count = 1;
-                    new_vehicle = new Vehicle();
+                    new_value = new ValueSheet();
                 }
-                new_vehicle.SetAtrribute(count - 1, str);
+                new_value.SetAtrribute(count - 1, str);
                 count += 1;
             }
         }
@@ -182,61 +212,47 @@ namespace Main_App.Views
             if (userLocation != null)
                 return;
         }
-        private async Task GetCurrentLocation()
-        {
-            try
-            {
-                var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
-                userLocation = await Geolocation.GetLastKnownLocationAsync();
-                userLocation = await Geolocation.GetLocationAsync(request);
-            } catch (FeatureNotSupportedException fnsEx)
-            {
-                // Not supported on device.
-            } catch (FeatureNotEnabledException fneEx)
-            {
-                // Not enabled on device
-            } catch (PermissionException pEx)
-            {
-                // If no permission
-            } catch (Exception ex)
-            {
-                // Basically, unable to get location!
-            }
-        }
 
+        #region Table Get / Load Functions
         private async Task LoadTable(StackLayout stackLayout)
         {
-            string content = await GetTable();
-            // Split values based on the commas
-            if (!content.IsNullOrEmpty())
+            int numOfTables = 2;
+            // Adding values to table for easier insertion
+            Dictionary<string, List<ValueSheet>> values = new Dictionary<string, List<ValueSheet>>();
+            values.Add(await GetTable("https://ttc-recieve-html.azurewebsites.net/api/GetFullTTCtable?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ=="), vehicles);
+            values.Add(await GetTable("https://ttc-recieve-html.azurewebsites.net/api/GetFullTTCtable?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ=="), routes);
+
+
+            foreach (var value in values)
             {
-                await Task.Run(async () =>
+                if (!value.Key.IsNullOrEmpty())
                 {
-                    string[] values = content.Split(',');
-                    await LoadAttributesIntoClasses(values);
-
-                    await GetCurrentLocation();
-                    if (userLocation != null)
+                    await Task.Run(async () =>
                     {
-                        CompareRoutesByLocation(userLocation);
-                    }
-
-                    Device.BeginInvokeOnMainThread(() => {
-                        frames = new List<Frame>();
-                        foreach (Vehicle vehicle in vehicles)
-                        {
-                            Frame frame = CreateFrame(vehicle.GetAttribute(1), null, null);
-                            frames.Add(frame);
-                            stackLayout.Children.Add(frame);
-                        }
+                        await LoadAttributesIntoClasses(value.Key, value.Value);
                     });
-                });
+                }
             }
+            await Task.Run(async () =>
+            {
+                await GetCurrentLocation();
+                if (userLocation != null)
+                {
+                    CompareVehiclesByLocation(userLocation);
+                }
 
-            
+                Device.BeginInvokeOnMainThread(() => {
+                    frames = new List<Frame>();
+                    foreach (Vehicle vehicle in vehicles)
+                    {
+                        Frame frame = CreateFrame(vehicle.GetAttribute(1), null, null);
+                        frames.Add(frame);
+                        stackLayout.Children.Add(frame);
+                    }
+                });
+            });
         }
-
-        private async Task<string> GetTable()
+        private async Task<string> GetTable(string text)
         {
             try
             {
@@ -252,6 +268,7 @@ namespace Main_App.Views
             }
             return "";
         }
+        #endregion
 
     }
 }
