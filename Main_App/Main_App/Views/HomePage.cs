@@ -59,13 +59,6 @@ namespace Main_App.Views
             return atts[index];
         }
     }
-    public class Vehicle : ValueSheet
-    {
-        
-    }
-    public class Route : ValueSheet
-    {
-    }
     #endregion
 
     public partial class HomePage : ContentPage
@@ -102,8 +95,9 @@ namespace Main_App.Views
         }
 
         /* Creating a frame based on 3 string values */
-        Frame CreateFrame(string routeNum, string lat, string lon)
+        Frame CreateFrame(string routeNum, string routeName)
         {
+            Console.WriteLine(routeName);
             Frame frame = new Frame {
                 BackgroundColor = Color.FromHex("850700"),
                 CornerRadius = 10,
@@ -128,9 +122,20 @@ namespace Main_App.Views
                 VerticalOptions = LayoutOptions.Center,
                 HorizontalOptions = LayoutOptions.Start
             };
+            Label label2 = new Label
+            {
+                Text = routeName,
+                FontAttributes = FontAttributes.Bold,
+                FontSize = 20,
+                WidthRequest = 120,
+                HeightRequest = 60,
+                VerticalOptions = LayoutOptions.Center,
+                HorizontalOptions = LayoutOptions.End
+            };
 
             absLayout.Children.Add(box);
             absLayout.Children.Add(label);
+            absLayout.Children.Add(label2);
 
             frame.Content = absLayout;
             return frame;
@@ -185,13 +190,12 @@ namespace Main_App.Views
         /* Async functions */
         private async Task LoadAttributesIntoClasses(string content, List<ValueSheet> list)
         {
-            string[] values = content.Split(',');
-            list = new List<ValueSheet>(values.Length / 9); // Since we know there is 9 values
+            string[] values = content.Split(',', '\n');
+            list.Capacity = values.Length / 9;
             int count = 1;
             ValueSheet new_value = new ValueSheet();
             foreach (string str in values)
             {
-                if (str.IsNullOrEmpty()) { return; }
                 // Add new ValueSheet into the list after count is done. Then create a new, temporary vehicle variable
                 if (count > 9)
                 {
@@ -218,9 +222,11 @@ namespace Main_App.Views
         {
             int numOfTables = 2;
             // Adding values to table for easier insertion
-            Dictionary<string, List<ValueSheet>> values = new Dictionary<string, List<ValueSheet>>();
-            values.Add(await GetTable("https://ttc-recieve-html.azurewebsites.net/api/GetFullTTCtable?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ=="), vehicles);
-            values.Add(await GetTable("https://ttc-recieve-html.azurewebsites.net/api/GetFullTTCtable?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ=="), routes);
+            Dictionary<string, List<ValueSheet>> values = new Dictionary<string, List<ValueSheet>>
+            {
+                { await GetTable("https://ttc-recieve-html.azurewebsites.net/api/GetFullTTCtable?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ=="), vehicles = new List<ValueSheet>() },
+                { await GetTable("https://ttc-recieve-html.azurewebsites.net/api/GetTTCroutes?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ=="), routes = new List<ValueSheet>() }
+            };
 
 
             foreach (var value in values)
@@ -241,13 +247,22 @@ namespace Main_App.Views
                     CompareVehiclesByLocation(userLocation);
                 }
 
-                Device.BeginInvokeOnMainThread(() => {
+                Device.BeginInvokeOnMainThread(() => { 
                     frames = new List<Frame>();
-                    foreach (Vehicle vehicle in vehicles)
+                    foreach (ValueSheet vehicle in vehicles)
                     {
-                        Frame frame = CreateFrame(vehicle.GetAttribute(1), null, null);
-                        frames.Add(frame);
-                        stackLayout.Children.Add(frame);
+                        ValueSheet route = routes.Find(x => int.Parse(x.GetAttribute(2)) == int.Parse(vehicle.GetAttribute(1)));
+                        if (route != null)
+                        {
+                            Frame frame = CreateFrame(vehicle.GetAttribute(1), route.GetAttribute(3));
+                            frames.Add(frame);
+                            stackLayout.Children.Add(frame);
+                        } else
+                        {
+                            Frame frame = CreateFrame(vehicle.GetAttribute(1), null);
+                            frames.Add(frame);
+                            stackLayout.Children.Add(frame);
+                        }
                     }
                 });
             });
