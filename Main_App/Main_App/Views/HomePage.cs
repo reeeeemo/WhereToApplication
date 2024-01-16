@@ -8,7 +8,7 @@ using Xamarin.Essentials;
 using System.Threading;
 using Android.Text;
 using Android.Util;
-
+using Xamarin.Forms.Xaml;
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
 
@@ -73,7 +73,7 @@ namespace Main_App.Views
         {
             InitializeComponent();
             BindingContext = this;
-            client = new HttpClient();
+           /* client = new HttpClient();
             // Instantiating all the views needed for a view that can scroll (dunno why grid is needed, but it is to prevent cut off at the fold.
             Grid gridLayout = new Grid();
             StackLayout stackLayout = new StackLayout();
@@ -91,7 +91,13 @@ namespace Main_App.Views
 
             // finally, adding everything to the gridlayout and then adding it to the main content field of the xamarin.forms application
             gridLayout.Children.Add( scrollView );
-            Content = gridLayout;
+            Content = gridLayout; */
+        }
+
+        async void OnTap(object sender, EventArgs e)
+        {
+            Frame frame = (Frame)sender;
+            await frame.FadeTo(0.5, 1);
         }
 
         /* Creating a frame based on 3 string values */
@@ -108,11 +114,8 @@ namespace Main_App.Views
 
             BoxView box = new BoxView
             {
-                WidthRequest = 50,
-                HeightRequest = 30,
-                HorizontalOptions = LayoutOptions.Center,
-                VerticalOptions = LayoutOptions.Center,
             };
+            AbsoluteLayout.SetLayoutBounds(box, new Rectangle(0.5, 0, 100, 25));
             Label label = new Label {
                 Text = routeNum,
                 FontAttributes = FontAttributes.Bold,
