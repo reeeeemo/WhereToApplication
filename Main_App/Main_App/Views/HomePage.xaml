@@ -11,43 +11,58 @@
     <ContentPage.BindingContext>
         <vm:HomePageViewModel />
     </ContentPage.BindingContext>
-    <AbsoluteLayout>
-        <maps:Map x:Name="map" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="1,1,1,1"/>
-                <!-- <Label HorizontalOptions="Center" FontSize="20" Margin="20">Your Address: 138 Downes St</Label>
-                <Frame x:Name="DestFrame" CornerRadius="20" 
-                       HorizontalOptions="Center"
-                       WidthRequest="150" HeightRequest="40"
-                       BackgroundColor="AntiqueWhite">
-                    <Entry HorizontalOptions="Center" x:Name="destination" Placeholder="Destination?"
-                           TextColor="DarkCyan"/>
-                </Frame>
-                <Frame x:Name="TTC1" CornerRadius="10"  WidthRequest="300" HorizontalOptions="Center" HeightRequest="50" Padding="0">
-                    <Frame.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnTap"/>
-                    </Frame.GestureRecognizers>
-                    <Grid>
-                        <RelativeLayout HorizontalOptions="CenterAndExpand">
-                            <Label x:Name="Number" HorizontalOptions="Start" 
-                                   RelativeLayout.XConstraint="{ConstraintExpression Type=Constant, Constant=10}"
-                                   RelativeLayout.YConstraint="{ConstraintExpression Type=Constant, Constant=5}"
-                                   VerticalOptions="CenterAndExpand" FontSize="25"> 73
-                            </Label>
-                            <Label HorizontalOptions="Center"  
-                                   RelativeLayout.XConstraint="{ConstraintExpression Type=RelativeToView, ElementName=Number, Property=X}"
-                                   RelativeLayout.YConstraint="{ConstraintExpression Type=RelativeToView, ElementName=Number,Property=Y}"
-                                   TranslationX="40"
-                                   VerticalOptions="CenterAndExpand" 
-                                   FontSize="25"> |
-                            </Label>
-                            <Label x:Name="Title" HorizontalOptions="End" 
-                                   RelativeLayout.XConstraint="{ConstraintExpression Type=RelativeToView, ElementName=Number, Property=X}"
-                                   RelativeLayout.YConstraint="{ConstraintExpression Type=RelativeToView, ElementName=Number,Property=Y}"
-                                   TranslationX="55"
-                                   VerticalOptions="CenterAndExpand" 
-                                   FontSize="25"> QUEENS QUAY
-                            </Label>
-                        </RelativeLayout>
-                    </Grid>
-                </Frame> -->
-    </AbsoluteLayout>
+    <Grid>
+        <AbsoluteLayout>
+            <maps:Map x:Name="map" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="1,1,1,1"/>
+            <Frame AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="1,1,1,1" BackgroundColor="GhostWhite" Opacity="0.7"/>
+            <Frame Padding="0" BorderColor="Black" BackgroundColor="Transparent" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0.01,0.01,0.2,0.05">
+                <AbsoluteLayout>
+                    <ImageButton Source="map_icon.png"  AbsoluteLayout.LayoutFlags="All" 
+                                 AbsoluteLayout.LayoutBounds="0.07,0.5,0.45,0.85"
+                                 BackgroundColor="White"/>
+                    <ImageButton Source="map_icon.png" AbsoluteLayout.LayoutFlags="All" 
+                                 AbsoluteLayout.LayoutBounds="0.93,0.5,0.45,0.85"
+                                 BackgroundColor="White"/>
+                </AbsoluteLayout>
+            </Frame>
+
+            <!-- <Label HorizontalOptions="Center" FontSize="20" Margin="20">Your Address: 138 Downes St</Label>
+            <Frame x:Name="DestFrame" CornerRadius="20" 
+                   HorizontalOptions="Center"
+                   WidthRequest="150" HeightRequest="40"
+                   BackgroundColor="AntiqueWhite">
+                <Entry HorizontalOptions="Center" x:Name="destination" Placeholder="Destination?"
+                       TextColor="DarkCyan"/>
+            </Frame>
+            <Frame x:Name="TTC1" CornerRadius="10"  WidthRequest="300" HorizontalOptions="Center" HeightRequest="50" Padding="0">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnTap"/>
+                </Frame.GestureRecognizers>
+                <Grid>
+                    <RelativeLayout HorizontalOptions="CenterAndExpand">
+                        <Label x:Name="Number" HorizontalOptions="Start" 
+                               RelativeLayout.XConstraint="{ConstraintExpression Type=Constant, Constant=10}"
+                               RelativeLayout.YConstraint="{ConstraintExpression Type=Constant, Constant=5}"
+                               VerticalOptions="CenterAndExpand" FontSize="25"> 73
+                        </Label>
+                        <Label HorizontalOptions="Center"  
+                               RelativeLayout.XConstraint="{ConstraintExpression Type=RelativeToView, ElementName=Number, Property=X}"
+                               RelativeLayout.YConstraint="{ConstraintExpression Type=RelativeToView, ElementName=Number,Property=Y}"
+                               TranslationX="40"
+                               VerticalOptions="CenterAndExpand" 
+                               FontSize="25"> |
+                        </Label>
+                        <Label x:Name="Title" HorizontalOptions="End" 
+                               RelativeLayout.XConstraint="{ConstraintExpression Type=RelativeToView, ElementName=Number, Property=X}"
+                               RelativeLayout.YConstraint="{ConstraintExpression Type=RelativeToView, ElementName=Number,Property=Y}"
+                               TranslationX="55"
+                               VerticalOptions="CenterAndExpand" 
+                               FontSize="25"> QUEENS QUAY
+                        </Label>
+                    </RelativeLayout>
+                </Grid>
+            </Frame> -->
+        </AbsoluteLayout>
+    </Grid>
+    
 </ContentPage>
