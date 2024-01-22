@@ -68,36 +68,42 @@ namespace Main_App.Views
         private List<Frame> frames;
         Location userLocation;
         HttpClient client;
+        ImageButton[] select_buttons;
 
         public HomePage()
         {
             InitializeComponent();
             BindingContext = this;
-           /* client = new HttpClient();
-            // Instantiating all the views needed for a view that can scroll (dunno why grid is needed, but it is to prevent cut off at the fold.
-            Grid gridLayout = new Grid();
-            StackLayout stackLayout = new StackLayout();
-            ScrollView scrollView = new ScrollView();
 
-            // Setting stacklayout options + the function to populate stacklayout
-            stackLayout.Margin = new Thickness(20);
-            stackLayout.Orientation = StackOrientation.Vertical;
+            select_buttons = new ImageButton[2];
+            select_buttons[0] = (ImageButton)Content.FindByName("map_button");
+            select_buttons[1] = (ImageButton)Content.FindByName("search");
+            select_buttons[0].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("map_icon.png") : ImageSource.FromFile("Icons/map_icon.png"));
+            select_buttons[1].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("") : ImageSource.FromFile(""));
+            /* client = new HttpClient();
+             // Instantiating all the views needed for a view that can scroll (dunno why grid is needed, but it is to prevent cut off at the fold.
+             Grid gridLayout = new Grid();
+             StackLayout stackLayout = new StackLayout();
+             ScrollView scrollView = new ScrollView();
 
-            LoadTable(stackLayout);
+             // Setting stacklayout options + the function to populate stacklayout
+             stackLayout.Margin = new Thickness(20);
+             stackLayout.Orientation = StackOrientation.Vertical;
 
-            // Setting scrollview options and binding stacklayout's content to scrollview
-            scrollView.Content = stackLayout;
-            scrollView.IsClippedToBounds = false;
+             LoadTable(stackLayout);
 
-            // finally, adding everything to the gridlayout and then adding it to the main content field of the xamarin.forms application
-            gridLayout.Children.Add( scrollView );
-            Content = gridLayout; */
+             // Setting scrollview options and binding stacklayout's content to scrollview
+             scrollView.Content = stackLayout;
+             scrollView.IsClippedToBounds = false;
+
+             // finally, adding everything to the gridlayout and then adding it to the main content field of the xamarin.forms application
+             gridLayout.Children.Add( scrollView );
+             Content = gridLayout; */
         }
 
-        async void OnTap(object sender, EventArgs e)
+        public void DimCurrentButton(object sender, EventArgs e)
         {
-            Frame frame = (Frame)sender;
-            await frame.FadeTo(0.5, 1);
+
         }
 
         /* Creating a frame based on 3 string values */
