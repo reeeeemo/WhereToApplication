@@ -69,15 +69,26 @@ namespace Main_App.Views
         Location userLocation;
         HttpClient client;
         ImageButton[] select_buttons;
+        Frame search_frame;
 
         public HomePage()
         {
             InitializeComponent();
             BindingContext = this;
 
+            search_frame = (Frame)Content.FindByName("searchFrame");
+
+            string[] button_names =
+            {
+                "map_button",
+                "search"
+            };
+            
             select_buttons = new ImageButton[2];
-            select_buttons[0] = (ImageButton)Content.FindByName("map_button");
-            select_buttons[1] = (ImageButton)Content.FindByName("search");
+            for (int i = 0; i < button_names.Length; i++)
+            {
+                select_buttons[i] = (ImageButton)Content.FindByName(button_names[i]);
+            }
             select_buttons[0].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("map_icon.png") : ImageSource.FromFile("Icons/map_icon.png"));
             select_buttons[1].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("") : ImageSource.FromFile(""));
             /* client = new HttpClient();
@@ -103,6 +114,36 @@ namespace Main_App.Views
 
         public void DimCurrentButton(object sender, EventArgs e)
         {
+            foreach (ImageButton button in  select_buttons)
+            {
+                if (button != (ImageButton)sender)
+                {
+                    button.FadeTo(0.3);
+                } else
+                {
+                    button.FadeTo(1);
+                }
+                if ((ImageButton)sender == select_buttons[0])
+                {
+                    search_frame.FadeTo(0);
+                    search_frame.IsEnabled = false;
+                } else
+                {
+                    search_frame.FadeTo(0.7);
+                    search_frame.IsEnabled = true;
+                }
+            }
+        }
+
+        private void SetMapPageActive()
+        {
+
+
+        }
+
+        private void SetSearchPageActive()
+        {
+
 
         }
 

@@ -14,7 +14,7 @@
     <Grid>
         <AbsoluteLayout>
             <maps:Map x:Name="map" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="1,1,1,1"/>
-            <Frame AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="1,1,1,1" BackgroundColor="GhostWhite" Opacity="0.7"/>
+            <Frame x:Name="searchFrame" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="1,1,1,1" BackgroundColor="GhostWhite" Opacity="0.7"/>
             <Frame Padding="0" BorderColor="Transparent" BackgroundColor="Transparent" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0.01,0.01,0.2,0.05">
                 <AbsoluteLayout>
                     <ImageButton x:Name="map_button" CornerRadius="5" Padding="5" Aspect="AspectFit" AbsoluteLayout.LayoutFlags="All" 
@@ -22,7 +22,7 @@
                                  BackgroundColor="DimGray" Clicked="DimCurrentButton"/>
                     <ImageButton x:Name="search"  CornerRadius="5" AbsoluteLayout.LayoutFlags="All" 
                                  AbsoluteLayout.LayoutBounds="0.93,0.5,0.45,0.85"
-                                 BackgroundColor="DimGray"/>
+                                 BackgroundColor="DimGray" Clicked="DimCurrentButton"/>
                 </AbsoluteLayout>
             </Frame>
 
