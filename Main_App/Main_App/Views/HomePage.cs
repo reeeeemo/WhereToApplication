@@ -3,12 +3,9 @@ using Xamarin.Forms;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Microsoft.IdentityModel.Tokens;
 using Xamarin.Essentials;
-using System.Threading;
-using Android.Text;
-using Android.Util;
-using Xamarin.Forms.Xaml;
+using Xamarin.Forms.Maps;
+
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
 
@@ -55,12 +52,23 @@ namespace Main_App.Views
         }
         public string GetAttribute(int index)
         {
-            if (atts[index].IsNullOrEmpty()) { return string.Empty; }
+            if (String.IsNullOrEmpty(atts[index])) { return string.Empty; }
             return atts[index];
         }
     }
     #endregion
 
+    #region Custom Map Classes
+    public class CustomPin : Pin
+    {
+        public string Name { get; set; }
+        public string Url { get; set; }
+    }
+    public class CustomMap : Xamarin.Forms.Maps.Map
+    {
+       public List<CustomPin> CustomPins { get; set; }
+    }
+    #endregion
     public partial class HomePage : ContentPage
     {
         private List<ValueSheet> vehicles;
@@ -281,7 +289,7 @@ namespace Main_App.Views
 
             foreach (var value in values)
             {
-                if (!value.Key.IsNullOrEmpty())
+                if (!String.IsNullOrEmpty(value.Key))
                 {
                     await Task.Run(async () =>
                     {
