@@ -99,6 +99,14 @@ namespace Main_App.Views
             }
             select_buttons[0].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("map_icon.png") : ImageSource.FromFile("Icons/map_icon.png"));
             select_buttons[1].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("") : ImageSource.FromFile(""));
+
+            _ = SetUserMapLocation();
+
+            if (userLocation != null)
+            {
+                map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(userLocation.Latitude, userLocation.Longitude), Distance.FromMiles(1)));
+            }
+            
             /* client = new HttpClient();
              // Instantiating all the views needed for a view that can scroll (dunno why grid is needed, but it is to prevent cut off at the fold.
              Grid gridLayout = new Grid();
@@ -120,6 +128,11 @@ namespace Main_App.Views
              Content = gridLayout; */
         }
 
+        private async Task SetUserMapLocation()
+        {
+            await GetCurrentLocation();
+        }
+
         public void DimCurrentButton(object sender, EventArgs e)
         {
             foreach (ImageButton button in  select_buttons)
@@ -134,11 +147,11 @@ namespace Main_App.Views
                 if ((ImageButton)sender == select_buttons[0])
                 {
                     search_frame.FadeTo(0);
-                    search_frame.IsEnabled = false;
+                    search_frame.IsVisible = false;
                 } else
                 {
                     search_frame.FadeTo(0.7);
-                    search_frame.IsEnabled = true;
+                    search_frame.IsVisible = true;
                 }
             }
         }
