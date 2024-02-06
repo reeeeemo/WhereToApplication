@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Xamarin.Essentials;
 using Xamarin.Forms.Maps;
+using System.Reflection;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
@@ -39,11 +40,12 @@ namespace Main_App.Views
     {
         private string[] atts = new string[9];
         int count = 0;
+        int maxCount = 0;
 
-        public ValueSheet() { }
+        public ValueSheet(int c) { maxCount = c; }
         public void SetAtrribute(int index, string value)
         {
-            if (count >= 9)
+            if (count >= maxCount)
             {
                 return; // We cannot handle anymore values
             }
@@ -73,9 +75,8 @@ namespace Main_App.Views
     {
         private List<ValueSheet> vehicles;
         private List<ValueSheet> routes;
-        private List<Frame> frames;
+        private List<ValueSheet> stops;
         Location userLocation;
-        HttpClient client;
         ImageButton[] select_buttons;
         Frame search_frame;
 
@@ -106,26 +107,25 @@ namespace Main_App.Views
             {
                 map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(userLocation.Latitude, userLocation.Longitude), Distance.FromMiles(1)));
             }
-            
-            /* client = new HttpClient();
-             // Instantiating all the views needed for a view that can scroll (dunno why grid is needed, but it is to prevent cut off at the fold.
-             Grid gridLayout = new Grid();
-             StackLayout stackLayout = new StackLayout();
-             ScrollView scrollView = new ScrollView();
 
-             // Setting stacklayout options + the function to populate stacklayout
-             stackLayout.Margin = new Thickness(20);
-             stackLayout.Orientation = StackOrientation.Vertical;
 
-             LoadTable(stackLayout);
+            LoadTable();
 
-             // Setting scrollview options and binding stacklayout's content to scrollview
-             scrollView.Content = stackLayout;
-             scrollView.IsClippedToBounds = false;
-
-             // finally, adding everything to the gridlayout and then adding it to the main content field of the xamarin.forms application
-             gridLayout.Children.Add( scrollView );
-             Content = gridLayout; */
+            foreach (var stop in stops)
+            {
+                CustomPin pin = new CustomPin
+                {
+                    Type = PinType.Place,
+                    Position = new Position(Convert.ToDouble(stop.GetAttribute(4)), Convert.ToDouble(stop.GetAttribute(5))),
+                    Label = stop.GetAttribute(2),
+                    Address = "394 Pacific Ave, San Francisco CA",
+                    Name = "Xamarin",
+                    Url = "http://xamarin.com/about/"
+                };
+                map.CustomPins = new List<CustomPin> { pin };
+                map.Pins.Add(pin);
+                map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(Convert.ToDouble(stop.GetAttribute(4)), Convert.ToDouble(stop.GetAttribute(5))), Distance.FromMiles(1.0)));
+            }
         }
 
         private async Task SetUserMapLocation()
@@ -158,7 +158,7 @@ namespace Main_App.Views
 
         private void SetMapPageActive()
         {
-
+             
 
         }
 
@@ -166,50 +166,6 @@ namespace Main_App.Views
         {
 
 
-        }
-
-        /* Creating a frame based on 3 string values */
-        Frame CreateFrame(string routeNum, string routeName)
-        {
-            Console.WriteLine(routeName);
-            Frame frame = new Frame {
-                BackgroundColor = Color.FromHex("850700"),
-                CornerRadius = 10,
-                HasShadow = true
-            };
-            AbsoluteLayout absLayout = new AbsoluteLayout();
-
-
-            BoxView box = new BoxView
-            {
-            };
-            AbsoluteLayout.SetLayoutBounds(box, new Rectangle(0.5, 0, 100, 25));
-            Label label = new Label {
-                Text = routeNum,
-                FontAttributes = FontAttributes.Bold,
-                FontSize = 20,
-                WidthRequest = 30,
-                HeightRequest = 30,
-                VerticalOptions = LayoutOptions.Center,
-                HorizontalOptions = LayoutOptions.Start
-            };
-            Label label2 = new Label
-            {
-                Text = routeName,
-                FontAttributes = FontAttributes.Bold,
-                FontSize = 20,
-                WidthRequest = 120,
-                HeightRequest = 60,
-                VerticalOptions = LayoutOptions.Center,
-                HorizontalOptions = LayoutOptions.End
-            };
-
-            absLayout.Children.Add(box);
-            absLayout.Children.Add(label);
-            absLayout.Children.Add(label2);
-
-            frame.Content = absLayout;
-            return frame;
         }
 
         #region GeoLocation Functions
@@ -259,20 +215,20 @@ namespace Main_App.Views
         #endregion
 
         /* Async functions */
-        private async Task LoadAttributesIntoClasses(string content, List<ValueSheet> list)
+        private async Task LoadAttributesIntoClasses(string content, List<ValueSheet> list, int maxCount)
         {
             string[] values = content.Split(',', '\n');
-            list.Capacity = values.Length / 9;
+            list.Capacity = values.Length / maxCount;
             int count = 1;
-            ValueSheet new_value = new ValueSheet();
+            ValueSheet new_value = new ValueSheet(maxCount);
             foreach (string str in values)
             {
                 // Add new ValueSheet into the list after count is done. Then create a new, temporary vehicle variable
-                if (count > 9)
+                if (count > maxCount)
                 {
                     list.Add(new_value);
                     count = 1;
-                    new_value = new ValueSheet();
+                    new_value = new ValueSheet(maxCount);
                 }
                 new_value.SetAtrribute(count - 1, str);
                 count += 1;
@@ -289,66 +245,59 @@ namespace Main_App.Views
         }
 
         #region Table Get / Load Functions
-        private async Task LoadTable(StackLayout stackLayout)
+        private async Task LoadTable()
         {
-            int numOfTables = 2;
             // Adding values to table for easier insertion
             Dictionary<string, List<ValueSheet>> values = new Dictionary<string, List<ValueSheet>>
             {
-                { await GetTable("https://ttc-recieve-html.azurewebsites.net/api/GetFullTTCtable?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ=="), vehicles = new List<ValueSheet>() },
-                { await GetTable("https://ttc-recieve-html.azurewebsites.net/api/GetTTCroutes?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ=="), routes = new List<ValueSheet>() }
+                { await GetTable("/api/GetFullTTCtable?code=rTNwGB-sgjdmdaTemfChZkBENpvSki7wKcuL6CSE0x_SAzFuew33cQ=="), vehicles = new List<ValueSheet>() },
+                { await GetTable("/api/GetTTCroutes?code=ZCvBSJuJun3wBgi4CtRzON2RUJyXoAQ5fqEU1ZDs5sZzAzFuY8H4Qg=="), routes = new List<ValueSheet>() },
+                { await GetTable("/api/GetTTCstops?code=56eOTfWgotMIyFyLB7u5XmPhcERvEXa5K_1qaTrKxBhqAzFufNB6ww=="), stops = new List<ValueSheet>() }
             };
 
-
+            int count = 0;
             foreach (var value in values)
             {
                 if (!String.IsNullOrEmpty(value.Key))
                 {
-                    await Task.Run(async () =>
+                    if (count == 2)
                     {
-                        await LoadAttributesIntoClasses(value.Key, value.Value);
-                    });
+                        await LoadAttributesIntoClasses(value.Key, value.Value, 12);
+                    } else
+                    {
+                        await LoadAttributesIntoClasses(value.Key, value.Value, 9);
+                    }
+                    count++;
                 }
             }
-            await Task.Run(async () =>
-            {
-                await GetCurrentLocation();
-                if (userLocation != null)
-                {
-                    CompareVehiclesByLocation(userLocation);
-                }
 
-                Device.BeginInvokeOnMainThread(() => { 
-                    frames = new List<Frame>();
-                    foreach (ValueSheet vehicle in vehicles)
-                    {
-                        ValueSheet route = routes.Find(x => int.Parse(x.GetAttribute(2)) == int.Parse(vehicle.GetAttribute(1)));
-                        if (route != null)
-                        {
-                            Frame frame = CreateFrame(vehicle.GetAttribute(1), route.GetAttribute(3));
-                            frames.Add(frame);
-                            stackLayout.Children.Add(frame);
-                        } else
-                        {
-                            Frame frame = CreateFrame(vehicle.GetAttribute(1), null);
-                            frames.Add(frame);
-                            stackLayout.Children.Add(frame);
-                        }
-                    }
-                });
-            });
+            await GetCurrentLocation();
+            if (userLocation != null)
+            {
+                CompareVehiclesByLocation(userLocation);
+            }
         }
         private async Task<string> GetTable(string text)
         {
             try
             {
-                HttpResponseMessage response = await client.GetAsync(text).ConfigureAwait(false);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync();
-            } catch (HttpRequestException ex)
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("https://ttc-recieve-html.azurewebsites.net");
+                    HttpResponseMessage response = client.GetAsync(text).Result;
+                    response.EnsureSuccessStatusCode();
+                    return await response.Content.ReadAsStringAsync();
+                }
+            }
+            catch (HttpRequestException ex)
             {
                 Console.WriteLine(ex.Message);
-            } catch (TaskCanceledException ex)
+            }
+            catch (TaskCanceledException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (TargetInvocationException ex)
             {
                 Console.WriteLine(ex.Message);
             }

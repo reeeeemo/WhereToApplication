@@ -61,7 +61,7 @@ namespace Main_App.Droid
             marker.SetPosition(new LatLng(pin.Position.Latitude, pin.Position.Longitude));
             marker.SetTitle(pin.Label);
             marker.SetSnippet(pin.Address);
-            marker.SetIcon(BitmapDescriptorFactory.FromResource(Resource.Drawable.map_icon));
+            marker.SetIcon(BitmapDescriptorFactory.FromResource(Resource.Drawable.map_icon_small));
             return marker;
         }
 
