@@ -38,24 +38,29 @@ namespace Main_App.Views
 
     public class ValueSheet
     {
-        private string[] atts = new string[9];
+        private Dictionary<int, string> atts = new Dictionary<int, string>();
         int count = 0;
         int maxCount = 0;
 
-        public ValueSheet(int c) { maxCount = c; }
-        public void SetAtrribute(int index, string value)
+        public ValueSheet(int c) 
+        { 
+            maxCount = c;
+        }
+        public void SetAtrribute(string value)
         {
             if (count >= maxCount)
             {
                 return; // We cannot handle anymore values
             }
-            atts[index] = value;
+            atts.Add(count, value);
             count += 1;
         }
         public string GetAttribute(int index)
         {
-            if (String.IsNullOrEmpty(atts[index])) { return string.Empty; }
-            return atts[index];
+            string value;
+            atts.TryGetValue(index, out value);
+            if (String.IsNullOrEmpty(value)) { return string.Empty; }
+            return value;
         }
     }
     #endregion
@@ -110,22 +115,8 @@ namespace Main_App.Views
 
 
             LoadTable();
-
-            foreach (var stop in stops)
-            {
-                CustomPin pin = new CustomPin
-                {
-                    Type = PinType.Place,
-                    Position = new Position(Convert.ToDouble(stop.GetAttribute(4)), Convert.ToDouble(stop.GetAttribute(5))),
-                    Label = stop.GetAttribute(2),
-                    Address = "394 Pacific Ave, San Francisco CA",
-                    Name = "Xamarin",
-                    Url = "http://xamarin.com/about/"
-                };
-                map.CustomPins = new List<CustomPin> { pin };
-                map.Pins.Add(pin);
-                map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(Convert.ToDouble(stop.GetAttribute(4)), Convert.ToDouble(stop.GetAttribute(5))), Distance.FromMiles(1.0)));
-            }
+            LoadMap();
+            
         }
 
         private async Task SetUserMapLocation()
@@ -230,7 +221,7 @@ namespace Main_App.Views
                     count = 1;
                     new_value = new ValueSheet(maxCount);
                 }
-                new_value.SetAtrribute(count - 1, str);
+                new_value.SetAtrribute(str);
                 count += 1;
             }
         }
@@ -250,9 +241,9 @@ namespace Main_App.Views
             // Adding values to table for easier insertion
             Dictionary<string, List<ValueSheet>> values = new Dictionary<string, List<ValueSheet>>
             {
-                { await GetTable("/api/GetFullTTCtable?code=rTNwGB-sgjdmdaTemfChZkBENpvSki7wKcuL6CSE0x_SAzFuew33cQ=="), vehicles = new List<ValueSheet>() },
-                { await GetTable("/api/GetTTCroutes?code=ZCvBSJuJun3wBgi4CtRzON2RUJyXoAQ5fqEU1ZDs5sZzAzFuY8H4Qg=="), routes = new List<ValueSheet>() },
-                { await GetTable("/api/GetTTCstops?code=56eOTfWgotMIyFyLB7u5XmPhcERvEXa5K_1qaTrKxBhqAzFufNB6ww=="), stops = new List<ValueSheet>() }
+                { GetTable("/api/GetFullTTCtable?code=rTNwGB-sgjdmdaTemfChZkBENpvSki7wKcuL6CSE0x_SAzFuew33cQ=="), vehicles = new List<ValueSheet>() },
+                { GetTable("/api/GetTTCroutes?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ=="), routes = new List<ValueSheet>() },
+                { GetTable("/api/GetTTCstops?code=56eOTfWgotMIyFyLB7u5XmPhcERvEXa5K_1qaTrKxBhqAzFufNB6ww=="), stops = new List<ValueSheet>() }
             };
 
             int count = 0;
@@ -277,7 +268,28 @@ namespace Main_App.Views
                 CompareVehiclesByLocation(userLocation);
             }
         }
-        private async Task<string> GetTable(string text)
+        private void LoadMap()
+        {
+            map.CustomPins = new List<CustomPin> { };
+            foreach (var stop in stops)
+            {
+                if (stop != null)
+                {
+                    CustomPin pin = new CustomPin
+                    {
+                        Type = PinType.Place,
+                        Position = new Position(Convert.ToDouble(stop.GetAttribute(4)), Convert.ToDouble(stop.GetAttribute(5))),
+                        Label = stop.GetAttribute(2),
+                        Address = "394 Pacific Ave, San Francisco CA",
+                        Name = "Xamarin",
+                        Url = "http://xamarin.com/about/"
+                    };
+                    map.Pins.Add(pin);
+                    map.CustomPins.Add(pin);
+                }
+            }
+        }
+        private string GetTable(string text)
         {
             try
             {
@@ -286,7 +298,8 @@ namespace Main_App.Views
                     client.BaseAddress = new Uri("https://ttc-recieve-html.azurewebsites.net");
                     HttpResponseMessage response = client.GetAsync(text).Result;
                     response.EnsureSuccessStatusCode();
-                    return await response.Content.ReadAsStringAsync();
+                    Task<String> responsestring = response.Content.ReadAsStringAsync();
+                    return responsestring.Result;
                 }
             }
             catch (HttpRequestException ex)
