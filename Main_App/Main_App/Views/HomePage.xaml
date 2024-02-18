@@ -25,6 +25,13 @@
                                  BackgroundColor="DimGray" Clicked="DimCurrentButton"/>
                 </AbsoluteLayout>
             </Frame>
+            <Image Source="down_arrow.png" RotationX="180" BackgroundColor="Transparent" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0.05,1,0.15,0.1">
+                <Image.GestureRecognizers>
+                    <SwipeGestureRecognizer Direction="Down" Swiped="OpenSwipeMenu">
+                        
+                    </SwipeGestureRecognizer>
+                </Image.GestureRecognizers>
+            </Image>
         </AbsoluteLayout>
     </Grid>
     

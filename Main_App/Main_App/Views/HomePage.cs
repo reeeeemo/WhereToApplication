@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Xamarin.Essentials;
 using Xamarin.Forms.Maps;
 using System.Reflection;
+using Android.Icu.Text;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
@@ -92,19 +93,7 @@ namespace Main_App.Views
 
             search_frame = (Frame)Content.FindByName("searchFrame");
 
-            string[] button_names =
-            {
-                "map_button",
-                "search"
-            };
-            
-            select_buttons = new ImageButton[2];
-            for (int i = 0; i < button_names.Length; i++)
-            {
-                select_buttons[i] = (ImageButton)Content.FindByName(button_names[i]);
-            }
-            select_buttons[0].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("map_icon.png") : ImageSource.FromFile("Icons/map_icon.png"));
-            select_buttons[1].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("") : ImageSource.FromFile(""));
+            LoadImages();
 
             _ = SetUserMapLocation();
 
@@ -116,7 +105,6 @@ namespace Main_App.Views
 
             LoadTable();
             LoadMap();
-            
         }
 
         private async Task SetUserMapLocation()
@@ -145,6 +133,11 @@ namespace Main_App.Views
                     search_frame.IsVisible = true;
                 }
             }
+        }
+
+        public void OpenSwipeMenu(object sender, EventArgs e)
+        {
+            DisplayAlert("hi", "hi", "cancel");
         }
 
         private void SetMapPageActive()
@@ -284,10 +277,27 @@ namespace Main_App.Views
                         Name = "Xamarin",
                         Url = "http://xamarin.com/about/"
                     };
-                    map.Pins.Add(pin);
                     map.CustomPins.Add(pin);
                 }
             }
+            map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(Convert.ToDouble(stops[0].GetAttribute(4)), Convert.ToDouble(stops[0].GetAttribute(5))), Distance.FromMiles(1)));
+        }
+        private void LoadImages()
+        {
+            string[] button_names =
+            {
+                "map_button",
+                "search",
+            };
+
+            select_buttons = new ImageButton[2];
+            for (int i = 0; i < button_names.Length; i++)
+            {
+                select_buttons[i] = (ImageButton)Content.FindByName(button_names[i]);
+            }
+            select_buttons[0].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("map_icon.png") : ImageSource.FromFile("Icons/map_icon.png"));
+            select_buttons[1].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("") : ImageSource.FromFile(""));
+
         }
         private string GetTable(string text)
         {
