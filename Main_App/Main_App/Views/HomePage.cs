@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Xamarin.Essentials;
 using Xamarin.Forms.Maps;
 using System.Reflection;
+using System.Globalization;
 using Android.Icu.Text;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
