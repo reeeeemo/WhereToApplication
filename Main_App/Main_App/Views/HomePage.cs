@@ -139,7 +139,6 @@ namespace Main_App.Views
 
         public void OpenSwipeMenu(object sender, EventArgs e)
         {
-            DisplayAlert("hi", "hi", "cancel");
         }
 
         public void OnRouteTap(object sender, EventArgs e)

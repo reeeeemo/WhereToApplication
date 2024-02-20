@@ -35,7 +35,7 @@
                             </SwipeGestureRecognizer>
                         </Image.GestureRecognizers>
                     </Image>
-                    <Frame x:Name="RouteSelector" Padding="0" Margin="0" BackgroundColor="Wheat" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,1,0.5,0.5">
+                    <Frame x:Name="RouteSelector" Padding="0" Margin="0" BackgroundColor="Wheat" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,2.5,0.5,0.5">
                         <ScrollView x:Name="RouteView" AbsoluteLayout.LayoutBounds="0,0,1,1" AbsoluteLayout.LayoutFlags="All">
                             <StackLayout Padding="5">
                                 <StackLayout Orientation="Horizontal">
