@@ -8,6 +8,7 @@ using Xamarin.Forms.Maps;
 using System.Reflection;
 using System.Globalization;
 using Android.Icu.Text;
+using Android.Provider;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
@@ -139,6 +140,11 @@ namespace Main_App.Views
         public void OpenSwipeMenu(object sender, EventArgs e)
         {
             DisplayAlert("hi", "hi", "cancel");
+        }
+
+        public void OnRouteTap(object sender, EventArgs e)
+        {
+            DisplayAlert("yeah", "galago", "cancel");
         }
 
         private void SetMapPageActive()
