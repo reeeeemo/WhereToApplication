@@ -137,7 +137,7 @@ namespace Main_App.Views
             }
         }
 
-        public void OpenSwipeMenu(object sender, EventArgs e)
+        public void OpenMenu(object sender, EventArgs e)
         {
         }
 
