@@ -85,8 +85,9 @@ namespace Main_App.Views
         private List<ValueSheet> routes;
         private List<ValueSheet> stops;
         Location userLocation;
-        ImageButton[] select_buttons;
+        Xamarin.Forms.ImageButton[] select_buttons;
         Frame search_frame;
+        bool routeMenuPressed = false;
 
         public HomePage()
         {
@@ -107,6 +108,7 @@ namespace Main_App.Views
 
             LoadTable();
             LoadMap();
+            LoadRoutesIntoFrame((ScrollView)Content.FindByName("RouteView"));
         }
 
         private async Task SetUserMapLocation()
@@ -139,6 +141,22 @@ namespace Main_App.Views
 
         public void OpenMenu(object sender, EventArgs e)
         {
+            var menu = (Frame)Content.FindByName("RouteSelector");
+            var button = (ImageButton)Content.FindByName("MenuOpenButton");
+            if (menu == null || button == null) { return; }
+            if (routeMenuPressed)
+            {
+                menu.TranslateTo(-1, 0, 100);
+                button.TranslateTo(1, 0, 100);
+                routeMenuPressed = false;
+            }
+            else
+            {
+                menu.TranslateTo(menu.Width, 0, 100);
+                button.TranslateTo(menu.Width, 0, 100);
+                routeMenuPressed = true;
+            }
+
         }
 
         public void OnRouteTap(object sender, EventArgs e)
@@ -305,6 +323,60 @@ namespace Main_App.Views
             select_buttons[1].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("") : ImageSource.FromFile(""));
 
         }
+
+        private void LoadRoutesIntoFrame(ScrollView scrollView)
+        {
+            List<StackLayout> layouts = new List<StackLayout>();
+            
+            foreach(var route in routes)
+            {
+                if (route != null)
+                {
+                    var sub_layout = new StackLayout
+                    {
+                        Orientation = StackOrientation.Horizontal,
+                        Children = {
+                            new Image
+                            { 
+                                BackgroundColor = Color.Red,
+                                HeightRequest= 32,
+                                WidthRequest= 32,
+                                HorizontalOptions = LayoutOptions.CenterAndExpand,
+                                VerticalOptions = LayoutOptions.CenterAndExpand,
+                            },
+                            new Label
+                            {
+                                Text = route.GetAttribute(2),
+                                FontSize = 24,
+                                HorizontalOptions= LayoutOptions.CenterAndExpand,
+                                VerticalOptions= LayoutOptions.CenterAndExpand,
+                            },
+                            new CheckBox
+                            {
+                                Color= Color.Red,
+                                HorizontalOptions = LayoutOptions.CenterAndExpand,
+                                VerticalOptions= LayoutOptions.CenterAndExpand,
+                            },
+                        },
+                    };
+                    layouts.Add(sub_layout);
+                }
+            }
+
+            var main_stack_layout = new StackLayout
+            {
+                Padding = 5
+            };
+
+            foreach (var layout in layouts)
+            {
+                main_stack_layout.Children.Add(layout);
+            }
+
+            scrollView.Content = main_stack_layout;
+
+        }
+
         private string GetTable(string text)
         {
             try

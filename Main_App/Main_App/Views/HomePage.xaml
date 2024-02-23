@@ -26,23 +26,13 @@
                 </AbsoluteLayout>
             </Frame>
 
-            <ImageButton Source="right_arrow.png" RotationX="180" BackgroundColor="DimGray" 
+            <ImageButton x:Name="MenuOpenButton" Source="right_arrow.png" RotationX="180" BackgroundColor="DimGray" 
                          Aspect="AspectFit" AbsoluteLayout.LayoutFlags="All" 
                          AbsoluteLayout.LayoutBounds="0,0.25,0.05,0.05"
                          Clicked="OpenMenu"/>
 
-            <Frame x:Name="RouteSelector"  Padding="0" Margin="0" BackgroundColor="Wheat" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,2.5,0.5,0.5">
+            <Frame x:Name="RouteSelector"  Padding="0" Margin="0" BackgroundColor="Wheat" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="-1,0.475,0.5,0.5">
                   <ScrollView x:Name="RouteView" AbsoluteLayout.LayoutBounds="0,0,1,1" AbsoluteLayout.LayoutFlags="All">
-                      <StackLayout Padding="5">
-                          <StackLayout Orientation="Horizontal">
-                              <StackLayout.GestureRecognizers>
-                                  <TapGestureRecognizer Tapped="OnRouteTap"/>
-                              </StackLayout.GestureRecognizers>
-                              <Image BackgroundColor="Red" HeightRequest="32" WidthRequest="32" HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand"/>
-                              <Label Text="501" FontSize="24" HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand"/>
-                              <CheckBox Color="Red" HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand"/>
-                          </StackLayout>
-                      </StackLayout>
                   </ScrollView>
             </Frame>
                     
