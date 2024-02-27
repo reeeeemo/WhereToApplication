@@ -6,9 +6,7 @@ using System.Collections.Generic;
 using Xamarin.Essentials;
 using Xamarin.Forms.Maps;
 using System.Reflection;
-using System.Globalization;
-using Android.Icu.Text;
-using Android.Provider;
+using System.Linq;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
@@ -85,7 +83,10 @@ namespace Main_App.Views
         private List<ValueSheet> routes;
         private List<ValueSheet> stops;
         Location userLocation;
-        Xamarin.Forms.ImageButton[] select_buttons;
+        ImageButton[] select_buttons;
+        StackLayout route_text_layout;
+        List<View> full_route_text_layouts;
+        List<StackLayout> filteredRoutes = new List<StackLayout>();
         Frame search_frame;
         bool routeMenuPressed = false;
 
@@ -111,6 +112,7 @@ namespace Main_App.Views
             LoadRoutesIntoFrame((ScrollView)Content.FindByName("RouteView"));
         }
 
+        #region Button / Element Commands
         private async Task SetUserMapLocation()
         {
             await GetCurrentLocation();
@@ -159,6 +161,63 @@ namespace Main_App.Views
 
         }
 
+
+        // should be run on a seperate thread :D
+        public void OnRouteSearchTextChanged(object sender, EventArgs e)
+        {
+            SearchBar search_bar = (SearchBar)sender;
+
+
+            if (string.IsNullOrEmpty(search_bar.Text)) // redundant code I know, will put into a function at some point
+            {
+                filteredRoutes.Clear();
+                route_text_layout.Children.Clear();
+                route_text_layout.Children.Add(full_route_text_layouts.First()); // Adding the search bar!
+
+                foreach (var view in full_route_text_layouts)
+                {
+                    route_text_layout.Children.Add(view);
+                }
+                return;
+            }
+
+            // Taking each stacklayout in the route search bar, other than the search bar itself or else cast failure!
+            foreach (var view in route_text_layout.Children)
+            {
+                if (view as SearchBar == null) 
+                {
+                    var _view = view as StackLayout;
+                    if (_view != null) // View casting nullchecker
+                    {
+                        Label temp = _view.Children.FirstOrDefault(x => x.GetType() == typeof(Label)) as Label; // better than .First so it does not return an exception
+                        if (temp != null) // Label casting nullchecker
+                        {
+                            if (temp.Text.ToLower().StartsWith(search_bar.Text.ToLower()))
+                            {
+                                filteredRoutes.Add((StackLayout)view);
+                            }
+                        }
+                    }
+                }
+            }
+
+            route_text_layout.Children.Clear();
+            route_text_layout.Children.Add(full_route_text_layouts.First()); // Adding the search bar!
+            if (filteredRoutes.Count != 0)
+            {
+                foreach(var view in filteredRoutes)
+                {
+                    route_text_layout.Children.Add(view);
+                }
+            } else
+            {
+                foreach(var view in full_route_text_layouts)
+                {
+                    route_text_layout.Children.Add(view);
+                }
+            }
+        }
+
         public void OnRouteTap(object sender, EventArgs e)
         {
             DisplayAlert("yeah", "galago", "cancel");
@@ -175,6 +234,8 @@ namespace Main_App.Views
 
 
         }
+
+        #endregion
 
         #region GeoLocation Functions
         /* Function gets location via geolocation, then compares the data in the list by device's location*/
@@ -327,7 +388,7 @@ namespace Main_App.Views
         private void LoadRoutesIntoFrame(ScrollView scrollView)
         {
             List<StackLayout> layouts = new List<StackLayout>();
-            
+
             foreach(var route in routes)
             {
                 if (route != null)
@@ -350,12 +411,7 @@ namespace Main_App.Views
                                 FontSize = 24,
                                 HorizontalOptions= LayoutOptions.CenterAndExpand,
                                 VerticalOptions= LayoutOptions.CenterAndExpand,
-                            },
-                            new CheckBox
-                            {
-                                Color= Color.Red,
-                                HorizontalOptions = LayoutOptions.CenterAndExpand,
-                                VerticalOptions= LayoutOptions.CenterAndExpand,
+                                ClassId = "RouteText",
                             },
                         },
                     };
@@ -363,17 +419,31 @@ namespace Main_App.Views
                 }
             }
 
-            var main_stack_layout = new StackLayout
+            route_text_layout = new StackLayout
             {
                 Padding = 5
             };
 
+            SearchBar search_bar = new SearchBar
+            {
+                Placeholder = "Enter Route Num...",
+                FontSize = Device.GetNamedSize(NamedSize.Medium, typeof(SearchBar)),
+            };
+
+            search_bar.TextChanged += OnRouteSearchTextChanged;
+
+            full_route_text_layouts = new List<View>();
+
+            route_text_layout.Children.Add(search_bar);
+            full_route_text_layouts.Add(search_bar);
+
             foreach (var layout in layouts)
             {
-                main_stack_layout.Children.Add(layout);
+                route_text_layout.Children.Add(layout);
+                full_route_text_layouts.Add(layout);
             }
 
-            scrollView.Content = main_stack_layout;
+            scrollView.Content = route_text_layout;
 
         }
 
