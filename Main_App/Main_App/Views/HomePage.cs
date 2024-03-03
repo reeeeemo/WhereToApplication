@@ -7,6 +7,9 @@ using Xamarin.Essentials;
 using Xamarin.Forms.Maps;
 using System.Reflection;
 using System.Linq;
+using System.Collections.ObjectModel;
+using System.Net;
+using System.Threading;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
@@ -79,16 +82,22 @@ namespace Main_App.Views
     #endregion
     public partial class HomePage : ContentPage
     {
+        // Lists
         private List<ValueSheet> vehicles;
         private List<ValueSheet> routes;
         private List<ValueSheet> stops;
+        ObservableCollection<StackLayout> filteredRoutes = new ObservableCollection<StackLayout>();
+        List<View> full_route_text_layouts;
+
+        // Variables / Values
         Location userLocation;
+        bool routeMenuPressed = false;
+        private readonly object routeLock = new object();
+
+        // XAML Elements
         ImageButton[] select_buttons;
         StackLayout route_text_layout;
-        List<View> full_route_text_layouts;
-        List<StackLayout> filteredRoutes = new List<StackLayout>();
         Frame search_frame;
-        bool routeMenuPressed = false;
 
         public HomePage()
         {
@@ -161,6 +170,43 @@ namespace Main_App.Views
 
         }
 
+        private void AddAllRoutesToList()
+        {
+            filteredRoutes.Clear();
+            route_text_layout.Children.Clear();
+            route_text_layout.Children.Add(full_route_text_layouts.First()); // Adding the search bar!
+
+            foreach (var view in full_route_text_layouts)
+            {
+                route_text_layout.Children.Add(view);
+            }
+        }
+
+        public void FilterAllRoutesOnList(object searchBar)
+        {
+            if (!(searchBar is SearchBar)) { return; }
+
+            var _bar = searchBar as SearchBar; 
+
+                // Taking each stacklayout in the route search bar, other than the search bar itself or else cast failure!
+                foreach (var view in full_route_text_layouts.Skip(1)) // Always skip the first as it will always be the searchbar
+                {
+
+                    var _view = view as StackLayout;
+                    if (_view != null) // View casting nullchecker
+                    {
+                        Label temp = _view.Children.FirstOrDefault(x => x is Label) as Label; // better than .First so it does not return an exception
+                        bool text_match = temp.Text.ToLower().StartsWith(_bar.Text.ToLower());
+                        if (temp != null && text_match) // Label casting nullchecker
+                        {
+                            filteredRoutes.Add((StackLayout)view);
+                        } else if (temp != null && !text_match)
+                        {
+                        filteredRoutes.Remove((StackLayout)view);
+                        }
+                    }
+                }
+        }
 
         // should be run on a seperate thread :D
         public void OnRouteSearchTextChanged(object sender, EventArgs e)
@@ -170,51 +216,28 @@ namespace Main_App.Views
 
             if (string.IsNullOrEmpty(search_bar.Text)) // redundant code I know, will put into a function at some point
             {
-                filteredRoutes.Clear();
-                route_text_layout.Children.Clear();
-                route_text_layout.Children.Add(full_route_text_layouts.First()); // Adding the search bar!
-
-                foreach (var view in full_route_text_layouts)
-                {
-                    route_text_layout.Children.Add(view);
-                }
+                AddAllRoutesToList();
                 return;
             }
 
-            // Taking each stacklayout in the route search bar, other than the search bar itself or else cast failure!
-            foreach (var view in route_text_layout.Children)
+            lock(routeLock)
             {
-                if (view as SearchBar == null) 
-                {
-                    var _view = view as StackLayout;
-                    if (_view != null) // View casting nullchecker
-                    {
-                        Label temp = _view.Children.FirstOrDefault(x => x.GetType() == typeof(Label)) as Label; // better than .First so it does not return an exception
-                        if (temp != null) // Label casting nullchecker
-                        {
-                            if (temp.Text.ToLower().StartsWith(search_bar.Text.ToLower()))
-                            {
-                                filteredRoutes.Add((StackLayout)view);
-                            }
-                        }
-                    }
-                }
+                ThreadPool.QueueUserWorkItem(FilterAllRoutesOnList, search_bar);
             }
 
-            route_text_layout.Children.Clear();
-            route_text_layout.Children.Add(full_route_text_layouts.First()); // Adding the search bar!
-            if (filteredRoutes.Count != 0)
+            lock (routeLock)
             {
-                foreach(var view in filteredRoutes)
+                route_text_layout.Children.Clear();
+                route_text_layout.Children.Add(full_route_text_layouts.First()); // Adding the search bar!
+                if (filteredRoutes.Count != 0)
                 {
-                    route_text_layout.Children.Add(view);
+                    foreach (var view in filteredRoutes)
+                    {
+                        route_text_layout.Children.Add(view);
+                    }
                 }
-            } else
-            {
-                foreach(var view in full_route_text_layouts)
-                {
-                    route_text_layout.Children.Add(view);
-                }
+
+
             }
         }
 
@@ -346,6 +369,23 @@ namespace Main_App.Views
                 CompareVehiclesByLocation(userLocation);
             }
         }
+        /* 
+         -> go through list of routes
+            -> go through list of stops
+                -> check name of routes, compare to name of stop
+		            -> if name of route (lowercase) is in stop (lowercase), make that stop visible!
+        ^^ Might be good to preload this in another thread :3 (maybe pair<string, list(stops)>?
+         */
+        private void FindStopsOnRoute(string routeName)
+        {
+            foreach(var stop in stops)
+            {
+                if (stop.GetAttribute(3).ToLower().Contains(routeName.ToLower()))
+                {
+                    // 
+                }
+            }
+        }
         private void LoadMap()
         {
             map.CustomPins = new List<CustomPin> { };
@@ -360,7 +400,7 @@ namespace Main_App.Views
                         Label = stop.GetAttribute(2),
                         Address = "394 Pacific Ave, San Francisco CA",
                         Name = "Xamarin",
-                        Url = "http://xamarin.com/about/"
+                        Url = "http://xamarin.com/about/",
                     };
                     map.CustomPins.Add(pin);
                 }
@@ -444,7 +484,6 @@ namespace Main_App.Views
             }
 
             scrollView.Content = route_text_layout;
-
         }
 
         private string GetTable(string text)
