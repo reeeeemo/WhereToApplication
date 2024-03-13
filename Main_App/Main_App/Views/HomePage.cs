@@ -382,7 +382,7 @@ namespace Main_App.Views
             {
                 if (stop.GetAttribute(3).ToLower().Contains(routeName.ToLower()))
                 {
-                    // 
+                    map.Pins.Add(map.CustomPins.Find(x => x.Name == stop.GetAttribute(3).ToLower()));
                 }
             }
         }
@@ -399,7 +399,7 @@ namespace Main_App.Views
                         Position = new Position(Convert.ToDouble(stop.GetAttribute(4)), Convert.ToDouble(stop.GetAttribute(5))),
                         Label = stop.GetAttribute(2),
                         Address = "394 Pacific Ave, San Francisco CA",
-                        Name = "Xamarin",
+                        Name = stop.GetAttribute(3).ToLower(),
                         Url = "http://xamarin.com/about/",
                     };
                     map.CustomPins.Add(pin);
@@ -455,6 +455,9 @@ namespace Main_App.Views
                             },
                         },
                     };
+                    TapGestureRecognizer tap = new TapGestureRecognizer();
+                    tap.Tapped += Tap_Tapped;
+                    sub_layout.GestureRecognizers.Add
                     layouts.Add(sub_layout);
                 }
             }
