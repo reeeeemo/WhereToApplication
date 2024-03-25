@@ -10,6 +10,10 @@ using System.Linq;
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Threading;
+using System.Collections;
+using Android.Media.TV;
+using System.Diagnostics;
+using Android.Icu.Text;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
@@ -67,6 +71,64 @@ namespace Main_App.Views
             return value;
         }
     }
+
+    // Custom tuple class meant to make accessing the stops and routes easier.
+    public class Tuple<T1, T2>
+    {
+        public T1 Stop { get; set; }
+        public T2 Route { get; set; }
+
+        public Tuple(T1 stop, T2 route)
+        {
+            Stop = stop;
+            Route = route;
+        }
+    }
+
+    class GTFSEqualityComparator : IEqualityComparer<Tuple<string[], string[]>>
+    {
+        private bool Equals(string[] x, string[] y)
+        {
+            return x.SequenceEqual(y);
+        }
+
+        public bool Equals(Tuple<string[], string[]> x, Tuple<string[], string[]> y)
+        {
+            return Equals(x.Stop, y.Stop) && Equals(x.Route, y.Route);
+        }
+
+        public int GetHashCode(string[] obj)
+        {
+            return obj.Aggregate(string.Empty, (s, i) => s + i).GetHashCode();
+        }
+
+        // im going to be honest I have no clue what this does, however it says online it works and I will update this later
+        public int GetHashCode(Tuple<string[], string[]> obj)
+        {
+            int hash = 17;
+            hash = hash * 31 + GetHashCode(obj.Stop);
+            hash = hash * 31 + GetHashCode(obj.Route);
+            return hash;
+        }
+    }
+
+    public class GTFS_List : IEnumerable<Tuple<string[], string[]>>
+    {
+        public readonly object GTFS_LOCK = new object();
+        public List<Tuple<string[], string[]>> tuples = new List<Tuple<string[], string[]>>();
+
+        public IEnumerator<Tuple<string[], string[]>> GetEnumerator()
+        {
+            return tuples.GetEnumerator();
+        }
+
+
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
     #endregion
 
     #region Custom Map Classes
@@ -83,11 +145,10 @@ namespace Main_App.Views
     public partial class HomePage : ContentPage
     {
         // Lists
-        private List<ValueSheet> vehicles;
-        private List<ValueSheet> routes;
-        private List<ValueSheet> stops;
+        private List<string[]> vehicles;
         ObservableCollection<StackLayout> filteredRoutes = new ObservableCollection<StackLayout>();
-        List<View> full_route_text_layouts;
+        List<View> total_layouts;
+        GTFS_List full_ttc_list = new GTFS_List();
 
         // Variables / Values
         Location userLocation;
@@ -96,7 +157,7 @@ namespace Main_App.Views
 
         // XAML Elements
         ImageButton[] select_buttons;
-        StackLayout route_text_layout;
+        StackLayout current_layouts;
         Frame search_frame;
 
         public HomePage()
@@ -115,16 +176,24 @@ namespace Main_App.Views
                 map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(userLocation.Latitude, userLocation.Longitude), Distance.FromMiles(1)));
             }
 
-
             LoadTable();
             LoadMap();
-            LoadRoutesIntoFrame((ScrollView)Content.FindByName("RouteView"));
+            LoadRoutes();
         }
+
+
 
         #region Button / Element Commands
         private async Task SetUserMapLocation()
         {
             await GetCurrentLocation();
+        }
+
+        public void OnRouteTap(object sender, EventArgs e)
+        {
+            StackLayout _view = sender as StackLayout;
+            Label temp = _view.Children.FirstOrDefault(x => x is Label) as Label; // better than .First so it does not return an exception
+            //FindStopsOnRoute(temp.Text);
         }
 
         public void DimCurrentButton(object sender, EventArgs e)
@@ -173,15 +242,18 @@ namespace Main_App.Views
         private void AddAllRoutesToList()
         {
             filteredRoutes.Clear();
-            route_text_layout.Children.Clear();
-            route_text_layout.Children.Add(full_route_text_layouts.First()); // Adding the search bar!
+            current_layouts.Children.Clear();
+            current_layouts.Children.Add(total_layouts.First()); // Adding the search bar!
 
-            foreach (var view in full_route_text_layouts)
+            foreach (var view in total_layouts)
             {
-                route_text_layout.Children.Add(view);
+                current_layouts.Children.Add(view);
             }
         }
 
+        /*
+         * FILTERING ALGORITHM FOR ROUTE LAYOUTS 
+        */
         public void FilterAllRoutesOnList(object searchBar)
         {
             if (!(searchBar is SearchBar)) { return; }
@@ -189,7 +261,7 @@ namespace Main_App.Views
             var _bar = searchBar as SearchBar; 
 
                 // Taking each stacklayout in the route search bar, other than the search bar itself or else cast failure!
-                foreach (var view in full_route_text_layouts.Skip(1)) // Always skip the first as it will always be the searchbar
+                foreach (var view in total_layouts.Skip(1)) // Always skip the first as it will always be the searchbar
                 {
 
                     var _view = view as StackLayout;
@@ -208,7 +280,10 @@ namespace Main_App.Views
                 }
         }
 
-        // should be run on a seperate thread :D
+        /*
+         *  FILTER ROUTES BASED ON SEARCH QUERY + AVAILABLE CURRENT LAYOUTS
+         *  ADDS / DELETES TO CURRENT LAYOUTS
+        */
         public void OnRouteSearchTextChanged(object sender, EventArgs e)
         {
             SearchBar search_bar = (SearchBar)sender;
@@ -227,23 +302,18 @@ namespace Main_App.Views
 
             lock (routeLock)
             {
-                route_text_layout.Children.Clear();
-                route_text_layout.Children.Add(full_route_text_layouts.First()); // Adding the search bar!
+                current_layouts.Children.Clear();
+                current_layouts.Children.Add(total_layouts.First()); // Adding the search bar!
                 if (filteredRoutes.Count != 0)
                 {
                     foreach (var view in filteredRoutes)
                     {
-                        route_text_layout.Children.Add(view);
+                        current_layouts.Children.Add(view);
                     }
                 }
 
 
             }
-        }
-
-        public void OnRouteTap(object sender, EventArgs e)
-        {
-            DisplayAlert("yeah", "galago", "cancel");
         }
 
         private void SetMapPageActive()
@@ -261,10 +331,13 @@ namespace Main_App.Views
         #endregion
 
         #region GeoLocation Functions
-        /* Function gets location via geolocation, then compares the data in the list by device's location*/
+        /* 
+         * GET LOCATION VIA GEOLOCATION 
+         * COMPARES AND SORTS DATA BASED ON LOCATION
+         */
         private void CompareVehiclesByLocation(Location user_location)
         {
-            vehicles.Sort(delegate(ValueSheet x, ValueSheet y)
+            vehicles.Sort(delegate(string[] x, string[] y)
             {
                 if (x == null && y == null) return 0;
                 else if (x == null) return -1;
@@ -272,8 +345,8 @@ namespace Main_App.Views
                 else
                 {
                     // Essentially, if vector x is greater than vector y, return that
-                    if (Location.CalculateDistance(new Location(Convert.ToDouble(x.GetAttribute(3)), Convert.ToDouble(x.GetAttribute(4))), user_location, DistanceUnits.Kilometers) >
-                    Location.CalculateDistance(Convert.ToDouble(y.GetAttribute(3)), Convert.ToDouble(y.GetAttribute(4)), user_location, DistanceUnits.Kilometers)) return 1;
+                    if (Location.CalculateDistance(new Location(Convert.ToDouble(x[3]), Convert.ToDouble(x[4])), user_location, DistanceUnits.Kilometers) >
+                    Location.CalculateDistance(Convert.ToDouble(y[3]), Convert.ToDouble(y[4]), user_location, DistanceUnits.Kilometers)) return 1;
                     else return -1;
                 }
             });
@@ -304,28 +377,6 @@ namespace Main_App.Views
                 // Basically, unable to get location!
             }
         }
-        #endregion
-
-        /* Async functions */
-        private async Task LoadAttributesIntoClasses(string content, List<ValueSheet> list, int maxCount)
-        {
-            string[] values = content.Split(',', '\n');
-            list.Capacity = values.Length / maxCount;
-            int count = 1;
-            ValueSheet new_value = new ValueSheet(maxCount);
-            foreach (string str in values)
-            {
-                // Add new ValueSheet into the list after count is done. Then create a new, temporary vehicle variable
-                if (count > maxCount)
-                {
-                    list.Add(new_value);
-                    count = 1;
-                    new_value = new ValueSheet(maxCount);
-                }
-                new_value.SetAtrribute(str);
-                count += 1;
-            }
-        }
 
         protected override async void OnAppearing()
         {
@@ -336,77 +387,86 @@ namespace Main_App.Views
                 return;
         }
 
+        #endregion
+
+
+
         #region Table Get / Load Functions
+
+
+        /* 
+         *  LOADS LINQ QUERIES & MERGES IN ONE TUPLE
+         *  SORTS VEHICLES BASED ON USER LOCATION 
+         */
         private async Task LoadTable()
         {
-            // Adding values to table for easier insertion
-            Dictionary<string, List<ValueSheet>> values = new Dictionary<string, List<ValueSheet>>
-            {
-                { GetTable("/api/GetFullTTCtable?code=rTNwGB-sgjdmdaTemfChZkBENpvSki7wKcuL6CSE0x_SAzFuew33cQ=="), vehicles = new List<ValueSheet>() },
-                { GetTable("/api/GetTTCroutes?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ=="), routes = new List<ValueSheet>() },
-                { GetTable("/api/GetTTCstops?code=56eOTfWgotMIyFyLB7u5XmPhcERvEXa5K_1qaTrKxBhqAzFufNB6ww=="), stops = new List<ValueSheet>() }
-            };
+            // temp variables, meant as a way to store the responses of the LINQ queries before merging them in the full_ttc_list
+            var stops = GetTable("/api/GetTTCstops?code=56eOTfWgotMIyFyLB7u5XmPhcERvEXa5K_1qaTrKxBhqAzFufNB6ww==").Split('\n').Select(line => line.Split(',')).ToList();
+            var routes = GetTable("/api/GetTTCroutes?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ==").Split('\n').Select(line => line.Split(',')).ToList();
+            var stop_times = GetTable("/api/GetTTCstop_times?code=sa2f9pBmyPYDuZCYLJ2jM50YY3bRPJd6AOZIh-TEnElfAzFuR3f7Cg==").Split('\n').Select(line => line.Split(',')).ToList();
+            var trips = GetTable("/api/GetTTCtrips?code=7kvGwh5INYtrOmIIQvfS3qGLsj_pjTD1Fpnvr4rS0ktvAzFuYNCAMA==").Split('\n').Select(line => line.Split(',')).ToList();
 
-            int count = 0;
-            foreach (var value in values)
+            lock(full_ttc_list.GTFS_LOCK)
             {
-                if (!String.IsNullOrEmpty(value.Key))
-                {
-                    if (count == 2)
-                    {
-                        await LoadAttributesIntoClasses(value.Key, value.Value, 12);
-                    } else
-                    {
-                        await LoadAttributesIntoClasses(value.Key, value.Value, 9);
-                    }
-                    count++;
-                }
+                var query_result = (from stopTime in stop_times
+                                   join trip in trips on stopTime[0] equals trip[2]
+                                   join route in routes on trip[0] equals route[0]
+                                   join stop in stops on stopTime[3] equals stop[0]
+                                   select new Tuple<string[], string[]>(stop, route)).ToList();
+                full_ttc_list.tuples = query_result.Distinct(new GTFSEqualityComparator()).ToList();
+
             }
 
+            foreach(var record in full_ttc_list.tuples)
+            {
+                Debug.WriteLine($"Route: {record.Route[3]}. Stop: {record.Stop[2]}");
+            }
+
+            // Gets location and sorts vehicle list by the user location!
             await GetCurrentLocation();
             if (userLocation != null)
             {
                 CompareVehiclesByLocation(userLocation);
             }
         }
-        /* 
-         -> go through list of routes
-            -> go through list of stops
-                -> check name of routes, compare to name of stop
-		            -> if name of route (lowercase) is in stop (lowercase), make that stop visible!
-        ^^ Might be good to preload this in another thread :3 (maybe pair<string, list(stops)>?
-         */
-        private void FindStopsOnRoute(string routeName)
-        {
-            foreach(var stop in stops)
-            {
-                if (stop.GetAttribute(3).ToLower().Contains(routeName.ToLower()))
-                {
-                    map.Pins.Add(map.CustomPins.Find(x => x.Name == stop.GetAttribute(3).ToLower()));
-                }
-            }
-        }
+
+        /*
+         * TAKES ALL STOPS FROM full_ttc_list
+         * CONVERTS TO PINS AND ADDS TO MAP PIN LIST
+        */
         private void LoadMap()
         {
             map.CustomPins = new List<CustomPin> { };
-            foreach (var stop in stops)
+            try
             {
-                if (stop != null)
+                lock (full_ttc_list.GTFS_LOCK)
                 {
-                    CustomPin pin = new CustomPin
+                    foreach (var record in full_ttc_list.tuples)
                     {
-                        Type = PinType.Place,
-                        Position = new Position(Convert.ToDouble(stop.GetAttribute(4)), Convert.ToDouble(stop.GetAttribute(5))),
-                        Label = stop.GetAttribute(2),
-                        Address = "394 Pacific Ave, San Francisco CA",
-                        Name = stop.GetAttribute(3).ToLower(),
-                        Url = "http://xamarin.com/about/",
-                    };
-                    map.CustomPins.Add(pin);
+                        if (record.Stop != null && record.Stop.Length >= 6)
+                        {
+                            CustomPin pin = new CustomPin
+                            {
+                                Type = PinType.Place,
+                                Position = new Position(Convert.ToDouble(record.Stop[4]), Convert.ToDouble(record.Stop[5])),
+                                Label = record.Stop[2],
+                                Address = record.Stop[3].ToLower(),
+                                Name = record.Stop[1].ToLower(),
+                                Url = "http://xamarin.com/about/",
+                            };
+                            map.CustomPins.Add(pin);
+                        }
+                    }
+                    map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(Convert.ToDouble(full_ttc_list.tuples.First().Stop[4]), Convert.ToDouble(full_ttc_list.tuples.First().Stop[5])), Distance.FromMiles(1)));
                 }
+            } catch(Exception ex)
+            {
+                DisplayAlert(ex.Source, ex.Message, ex.StackTrace);
             }
-            map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(Convert.ToDouble(stops[0].GetAttribute(4)), Convert.ToDouble(stops[0].GetAttribute(5))), Distance.FromMiles(1)));
         }
+        /*
+         * TAKES ALL BUTTONS AND LOADS THE IMAGES PLACED ON THEM
+        */
         private void LoadImages()
         {
             string[] button_names =
@@ -421,52 +481,86 @@ namespace Main_App.Views
                 select_buttons[i] = (ImageButton)Content.FindByName(button_names[i]);
             }
             select_buttons[0].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("map_icon.png") : ImageSource.FromFile("Icons/map_icon.png"));
-            select_buttons[1].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("") : ImageSource.FromFile(""));
+            //select_buttons[1].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("") : ImageSource.FromFile(""));
 
         }
 
-        private void LoadRoutesIntoFrame(ScrollView scrollView)
+        private async Task LoadRoutes()
         {
-            List<StackLayout> layouts = new List<StackLayout>();
-
-            foreach(var route in routes)
+            if (ThreadPool.QueueUserWorkItem(LoadRoutesIntoFrame, Content.FindByName("RouteView")))
             {
-                if (route != null)
+                Device.BeginInvokeOnMainThread(() =>
                 {
-                    var sub_layout = new StackLayout
+                    ScrollView scroll = Content.FindByName("RouteView") as ScrollView;
+                    if (scroll != null)
                     {
-                        Orientation = StackOrientation.Horizontal,
-                        Children = {
-                            new Image
-                            { 
-                                BackgroundColor = Color.Red,
-                                HeightRequest= 32,
-                                WidthRequest= 32,
-                                HorizontalOptions = LayoutOptions.CenterAndExpand,
-                                VerticalOptions = LayoutOptions.CenterAndExpand,
-                            },
-                            new Label
-                            {
-                                Text = route.GetAttribute(2),
-                                FontSize = 24,
-                                HorizontalOptions= LayoutOptions.CenterAndExpand,
-                                VerticalOptions= LayoutOptions.CenterAndExpand,
-                                ClassId = "RouteText",
-                            },
+                        lock(full_ttc_list.GTFS_LOCK)
+                        {
+                            scroll.Content = current_layouts;
+                        }
+                    }
+                });
+
+            }
+        }
+
+        private void LoadRoutesIntoFrame(object scroll_view)
+        {
+            ScrollView scrollView = scroll_view as ScrollView;
+            if (scroll_view == null) { return; }
+            List<StackLayout> layouts = new List<StackLayout>();
+            total_layouts = new List<View>();
+
+
+            HashSet<string> seenRoutes = new HashSet<string>();
+            // Adding each route into a stacklayout and then to the list of stack layouts
+            foreach (var record in full_ttc_list.tuples)
+            {
+                lock (full_ttc_list.GTFS_LOCK)
+                {
+                    string routeIdentifier = record.Route[2] + record.Route[3];
+
+                    if (!seenRoutes.Contains(routeIdentifier))
+                    {
+                        Debug.WriteLine($"Count DURING = {full_ttc_list.tuples.Count}");
+                        seenRoutes.Add(routeIdentifier);
+                        var sub_layout = new StackLayout
+                        {
+                            Orientation = StackOrientation.Horizontal,
+                            Children = {
+                        new Image
+                        {
+                            BackgroundColor = Color.Red,
+                            HeightRequest= 32,
+                            WidthRequest= 32,
+                            HorizontalOptions = LayoutOptions.CenterAndExpand,
+                            VerticalOptions = LayoutOptions.CenterAndExpand,
                         },
-                    };
-                    TapGestureRecognizer tap = new TapGestureRecognizer();
-                    tap.Tapped += Tap_Tapped;
-                    sub_layout.GestureRecognizers.Add
-                    layouts.Add(sub_layout);
+                        new Label
+                        {
+                            Text = record.Route[2],
+                            FontSize = 24,
+                            HorizontalOptions= LayoutOptions.CenterAndExpand,
+                            VerticalOptions= LayoutOptions.CenterAndExpand,
+                            ClassId = "RouteText",
+                        },
+                    },
+                        };
+                        // Adding a tap gesture to each!
+                        TapGestureRecognizer tap = new TapGestureRecognizer();
+                        tap.Tapped += OnRouteTap;
+                        sub_layout.GestureRecognizers.Add(tap);
+                        layouts.Add(sub_layout);
+                    }
                 }
             }
 
-            route_text_layout = new StackLayout
+            current_layouts = new StackLayout
             {
                 Padding = 5
             };
 
+            // Create search bar, then add to the layouts
             SearchBar search_bar = new SearchBar
             {
                 Placeholder = "Enter Route Num...",
@@ -475,20 +569,34 @@ namespace Main_App.Views
 
             search_bar.TextChanged += OnRouteSearchTextChanged;
 
-            full_route_text_layouts = new List<View>();
-
-            route_text_layout.Children.Add(search_bar);
-            full_route_text_layouts.Add(search_bar);
-
-            foreach (var layout in layouts)
+            
+            lock(routeLock)
             {
-                route_text_layout.Children.Add(layout);
-                full_route_text_layouts.Add(layout);
+                current_layouts.Children.Add(search_bar);
+                total_layouts.Add(search_bar);
             }
 
-            scrollView.Content = route_text_layout;
+            LoadLayouts(layouts);
+
         }
 
+        // there is over 100000 layouts what the fuuuck
+        private void LoadLayouts(List<StackLayout> stack_layout)
+        {
+            if (stack_layout != null)
+            {
+                foreach(StackLayout layout in stack_layout)
+                {
+                    current_layouts.Children.Add(layout);
+                    total_layouts.Add(layout);
+                }
+            }
+        }
+
+        /*
+         * TAKES SUBSTRING AND ADDS TO BASE AZURE STORAGE STRING
+         * RETURNS RESULT STRING (a bunch of .csv information)
+         */
         private string GetTable(string text)
         {
             try
