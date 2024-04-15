@@ -28,105 +28,62 @@ namespace Main_App.Views
         public string Name { get; set; }
     }
 
-    // Custom Vector2 class for latitude and longitude
-    public class Vector2
+    public class Stop
     {
-        private double lat, lon;
-
-        public Vector2(double Ilat, double Ilon)
-        {
-            lat = Ilat;
-            lon = Ilon;
-        }
-        public double GetLat() { return lat; }
-        public double GetLon() { return lon; }
-        public void SetLat(double value) { lat = value; }
-        public void SetLon(double value) { lon = value; }
+        public string tripName;
+        public string stopName;
+        public double lat;
+        public double lon;
+        public int routeShortName;
+        public string routeLongName;
     }
 
-    public class ValueSheet
+    public class Route
     {
-        private Dictionary<int, string> atts = new Dictionary<int, string>();
-        int count = 0;
-        int maxCount = 0;
-
-        public ValueSheet(int c) 
-        { 
-            maxCount = c;
-        }
-        public void SetAtrribute(string value)
-        {
-            if (count >= maxCount)
-            {
-                return; // We cannot handle anymore values
-            }
-            atts.Add(count, value);
-            count += 1;
-        }
-        public string GetAttribute(int index)
-        {
-            string value;
-            atts.TryGetValue(index, out value);
-            if (String.IsNullOrEmpty(value)) { return string.Empty; }
-            return value;
-        }
+        public string routeLongName;
+        public int routeShortName;
+        public int wheelchairBoarding;
     }
 
-    // Custom tuple class meant to make accessing the stops and routes easier.
-    public class Tuple<T1, T2>
-    {
-        public T1 Stop { get; set; }
-        public T2 Route { get; set; }
-
-        public Tuple(T1 stop, T2 route)
-        {
-            Stop = stop;
-            Route = route;
-        }
-    }
-
-    class GTFSEqualityComparator : IEqualityComparer<Tuple<string[], string[]>>
-    {
-        private bool Equals(string[] x, string[] y)
-        {
-            return x.SequenceEqual(y);
-        }
-
-        public bool Equals(Tuple<string[], string[]> x, Tuple<string[], string[]> y)
-        {
-            return Equals(x.Stop, y.Stop) && Equals(x.Route, y.Route);
-        }
-
-        public int GetHashCode(string[] obj)
-        {
-            return obj.Aggregate(string.Empty, (s, i) => s + i).GetHashCode();
-        }
-
-        // im going to be honest I have no clue what this does, however it says online it works and I will update this later
-        public int GetHashCode(Tuple<string[], string[]> obj)
-        {
-            int hash = 17;
-            hash = hash * 31 + GetHashCode(obj.Stop);
-            hash = hash * 31 + GetHashCode(obj.Route);
-            return hash;
-        }
-    }
-
-    public class GTFS_List : IEnumerable<Tuple<string[], string[]>>
+    public class GTFS_List
     {
         public readonly object GTFS_LOCK = new object();
-        public List<Tuple<string[], string[]>> tuples = new List<Tuple<string[], string[]>>();
+        public List<Stop> stops = new List<Stop>();
+        public List<Route> routes  = new List<Route>();
 
-        public IEnumerator<Tuple<string[], string[]>> GetEnumerator()
+        public GTFS_List() { }
+
+        // Adds stops in the order: tripName, stopName, lat, lon, routeShortName, routeLongName
+        public void SetStops(List<string[]> _stops)
         {
-            return tuples.GetEnumerator();
+            foreach (string[] stop in _stops.Skip(1))
+            {
+                if (stop.Length > 0)
+                {
+                    Stop temp = new Stop();
+                    temp.tripName = stop[0];
+                    temp.stopName = stop[1];
+                    temp.lat = Convert.ToDouble(stop[2]);
+                    temp.lon = Convert.ToDouble(stop[3]);
+                    temp.routeShortName = Convert.ToInt32(stop[4]);
+                    temp.routeLongName = stop[5];
+                    stops.Add(temp);
+                }
+            }
         }
-
-
-
-        IEnumerator IEnumerable.GetEnumerator()
+        public void SetRoutes(List<string[]> _routes)
         {
-            return GetEnumerator();
+            foreach (string[] route in _routes.Skip(1))
+            {
+                if (route.Length > 0) 
+                {
+                    Route temp = new Route();
+                    temp.routeShortName = Convert.ToInt32(route[0]);
+                    temp.routeLongName = route[1];
+                    temp.wheelchairBoarding = Convert.ToInt32(route[2]);
+                    routes.Add(temp);
+                }
+            }
         }
     }
     #endregion
@@ -395,32 +352,17 @@ namespace Main_App.Views
 
 
         /* 
-         *  LOADS LINQ QUERIES & MERGES IN ONE TUPLE
+         *  LOADS SQL QUERIES INTO LISTS
          *  SORTS VEHICLES BASED ON USER LOCATION 
          */
         private async Task LoadTable()
         {
             // temp variables, meant as a way to store the responses of the LINQ queries before merging them in the full_ttc_list
-            var stops = GetTable("/api/GetTTCstops?code=56eOTfWgotMIyFyLB7u5XmPhcERvEXa5K_1qaTrKxBhqAzFufNB6ww==").Split('\n').Select(line => line.Split(',')).ToList();
-            var routes = GetTable("/api/GetTTCroutes?code=x-9PcSWxQ36dO5aRkaIUcipz4kGIzXgrBV33TS5flZbzAzFuyyIXbQ==").Split('\n').Select(line => line.Split(',')).ToList();
-            var stop_times = GetTable("/api/GetTTCstop_times?code=sa2f9pBmyPYDuZCYLJ2jM50YY3bRPJd6AOZIh-TEnElfAzFuR3f7Cg==").Split('\n').Select(line => line.Split(',')).ToList();
-            var trips = GetTable("/api/GetTTCtrips?code=7kvGwh5INYtrOmIIQvfS3qGLsj_pjTD1Fpnvr4rS0ktvAzFuYNCAMA==").Split('\n').Select(line => line.Split(',')).ToList();
+            var stops_list = GetTable("/api/GetStops?code=qpgCdidyJyUqU2vJE66sxyDZYwYcpG3WR9EJ1aFb9F9DAzFu1S90uQ==").Split('\n').Select(line => line.Split(',')).ToList();
+            var routes_list = GetTable("/api/GetRoutes?code=SSJNZE5JtL4Tjah5lr1pi_3-TUBRXEnC4c2KaJ3aP5gHAzFuL2VJ3Q==").Split('\n').Select(line => line.Split(',')).ToList();
 
-            lock(full_ttc_list.GTFS_LOCK)
-            {
-                var query_result = (from stopTime in stop_times
-                                   join trip in trips on stopTime[0] equals trip[2]
-                                   join route in routes on trip[0] equals route[0]
-                                   join stop in stops on stopTime[3] equals stop[0]
-                                   select new Tuple<string[], string[]>(stop, route)).ToList();
-                full_ttc_list.tuples = query_result.Distinct(new GTFSEqualityComparator()).ToList();
-
-            }
-
-            foreach(var record in full_ttc_list.tuples)
-            {
-                Debug.WriteLine($"Route: {record.Route[3]}. Stop: {record.Stop[2]}");
-            }
+            full_ttc_list.SetStops(stops_list);
+            full_ttc_list.SetRoutes(routes_list);
 
             // Gets location and sorts vehicle list by the user location!
             await GetCurrentLocation();
@@ -441,23 +383,23 @@ namespace Main_App.Views
             {
                 lock (full_ttc_list.GTFS_LOCK)
                 {
-                    foreach (var record in full_ttc_list.tuples)
+                    foreach (var stop in full_ttc_list.stops)
                     {
-                        if (record.Stop != null && record.Stop.Length >= 6)
+                        if (stop != null)
                         {
                             CustomPin pin = new CustomPin
                             {
                                 Type = PinType.Place,
-                                Position = new Position(Convert.ToDouble(record.Stop[4]), Convert.ToDouble(record.Stop[5])),
-                                Label = record.Stop[2],
-                                Address = record.Stop[3].ToLower(),
-                                Name = record.Stop[1].ToLower(),
+                                Position = new Position(stop.lat, stop.lon),
+                                Label = stop.tripName,
+                                Address = stop.stopName,
+                                Name = stop.tripName,
                                 Url = "http://xamarin.com/about/",
                             };
                             map.CustomPins.Add(pin);
                         }
                     }
-                    map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(Convert.ToDouble(full_ttc_list.tuples.First().Stop[4]), Convert.ToDouble(full_ttc_list.tuples.First().Stop[5])), Distance.FromMiles(1)));
+                    map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(Convert.ToDouble(full_ttc_list.stops.First().lat), Convert.ToDouble(full_ttc_list.stops.First().lon)), Distance.FromMiles(1)));
                 }
             } catch(Exception ex)
             {
@@ -514,15 +456,14 @@ namespace Main_App.Views
 
             HashSet<string> seenRoutes = new HashSet<string>();
             // Adding each route into a stacklayout and then to the list of stack layouts
-            foreach (var record in full_ttc_list.tuples)
+            foreach (var route in full_ttc_list.routes)
             {
                 lock (full_ttc_list.GTFS_LOCK)
                 {
-                    string routeIdentifier = record.Route[2] + record.Route[3];
+                    string routeIdentifier = route.routeLongName;
 
                     if (!seenRoutes.Contains(routeIdentifier))
                     {
-                        Debug.WriteLine($"Count DURING = {full_ttc_list.tuples.Count}");
                         seenRoutes.Add(routeIdentifier);
                         var sub_layout = new StackLayout
                         {
@@ -538,7 +479,7 @@ namespace Main_App.Views
                         },
                         new Label
                         {
-                            Text = record.Route[2],
+                            Text = route.routeShortName.ToString(),
                             FontSize = 24,
                             HorizontalOptions= LayoutOptions.CenterAndExpand,
                             VerticalOptions= LayoutOptions.CenterAndExpand,
