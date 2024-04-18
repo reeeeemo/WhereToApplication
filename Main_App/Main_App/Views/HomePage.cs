@@ -14,10 +14,12 @@ using System.Collections;
 using Android.Media.TV;
 using System.Diagnostics;
 using Android.Icu.Text;
+using Android.Security.Identity;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
-
+// https://webservices.umoiq.com/service/publicXMLFeed?command=vehicleLocations&a=ttc
+// THIS IS THE LIVE VEHICLE TRACKER :>
 
 namespace Main_App.Views
 {
@@ -45,11 +47,23 @@ namespace Main_App.Views
         public int wheelchairBoarding;
     }
 
+    public class Vehicle
+    {
+        public int routeShortName;
+        public double lat;
+        public double lon;
+        public int secsSinceReport;
+        public bool predictable;
+        public int heading;
+        public int speed; 
+    }
+
     public class GTFS_List
     {
         public readonly object GTFS_LOCK = new object();
         public List<Stop> stops = new List<Stop>();
         public List<Route> routes  = new List<Route>();
+        public List<Vehicle> vehicles = new List<Vehicle>();
 
         public GTFS_List() { }
 
@@ -83,6 +97,23 @@ namespace Main_App.Views
                     temp.wheelchairBoarding = Convert.ToInt32(route[2]);
                     routes.Add(temp);
                 }
+            } 
+        }
+
+
+        public void SetVehicles(List<string[]> _vehicles)
+        {
+            foreach (string[] vehicle in _vehicles)
+            {
+                Vehicle temp = new Vehicle();
+                temp.routeShortName = Convert.ToInt32(vehicle[1]);
+                temp.lat = Convert.ToDouble(vehicle[3]);
+                temp.lon = Convert.ToDouble(vehicle[4]);
+                temp.secsSinceReport = Convert.ToInt32(vehicle[5]);
+                temp.predictable = Convert.ToBoolean(vehicle[6]);
+                temp.heading = Convert.ToInt32(vehicle[7]);
+                temp.speed = Convert.ToInt32(vehicle[8]);
+                vehicles.Add(temp);
             }
         }
     }
@@ -99,6 +130,7 @@ namespace Main_App.Views
        public List<CustomPin> CustomPins { get; set; }
     }
     #endregion
+
     public partial class HomePage : ContentPage
     {
         // Lists
@@ -149,8 +181,24 @@ namespace Main_App.Views
         public void OnRouteTap(object sender, EventArgs e)
         {
             StackLayout _view = sender as StackLayout;
-            Label temp = _view.Children.FirstOrDefault(x => x is Label) as Label; // better than .First so it does not return an exception
-            //FindStopsOnRoute(temp.Text);
+            Label routeNameLabel = _view.Children.FirstOrDefault(x => x is Label) as Label; // better than .First so it does not return an exception
+
+            map.Pins.Clear();
+            foreach (var vehicle in full_ttc_list.vehicles)
+            {
+                if (vehicle.routeShortName.ToString().Equals(routeNameLabel.Text))
+                {
+                    CustomPin pin = new CustomPin
+                    {
+                        Type = PinType.Place,
+                        Position = new Position(vehicle.lat, vehicle.lon),
+                        Label = vehicle.routeShortName.ToString(),
+                        Name = vehicle.routeShortName.ToString(),
+                        Url = "http://xamarin.com/about/",
+                    };
+                    map.Pins.Add(pin);
+                }
+            }
         }
 
         public void DimCurrentButton(object sender, EventArgs e)
@@ -231,7 +279,7 @@ namespace Main_App.Views
                             filteredRoutes.Add((StackLayout)view);
                         } else if (temp != null && !text_match)
                         {
-                        filteredRoutes.Remove((StackLayout)view);
+                            filteredRoutes.Remove((StackLayout)view);
                         }
                     }
                 }
@@ -360,9 +408,11 @@ namespace Main_App.Views
             // temp variables, meant as a way to store the responses of the LINQ queries before merging them in the full_ttc_list
             var stops_list = GetTable("/api/GetStops?code=qpgCdidyJyUqU2vJE66sxyDZYwYcpG3WR9EJ1aFb9F9DAzFu1S90uQ==").Split('\n').Select(line => line.Split(',')).ToList();
             var routes_list = GetTable("/api/GetRoutes?code=SSJNZE5JtL4Tjah5lr1pi_3-TUBRXEnC4c2KaJ3aP5gHAzFuL2VJ3Q==").Split('\n').Select(line => line.Split(',')).ToList();
+            var vehicles_list = GetTable("/api/GetVehicles?code=WfeofEpor3nyPSFsHTxl-xRGIqZRhX1C3g2Qh3dfoBPEAzFuRkweYw==").Split('\n').Select(line => line.Split(',')).ToList();
 
             full_ttc_list.SetStops(stops_list);
             full_ttc_list.SetRoutes(routes_list);
+            full_ttc_list.SetVehicles(vehicles_list);
 
             // Gets location and sorts vehicle list by the user location!
             await GetCurrentLocation();
@@ -521,7 +571,6 @@ namespace Main_App.Views
 
         }
 
-        // there is over 100000 layouts what the fuuuck
         private void LoadLayouts(List<StackLayout> stack_layout)
         {
             if (stack_layout != null)
