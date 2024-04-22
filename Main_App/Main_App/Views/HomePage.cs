@@ -8,13 +8,8 @@ using Xamarin.Forms.Maps;
 using System.Reflection;
 using System.Linq;
 using System.Collections.ObjectModel;
-using System.Net;
 using System.Threading;
-using System.Collections;
-using Android.Media.TV;
 using System.Diagnostics;
-using Android.Icu.Text;
-using Android.Security.Identity;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
@@ -49,6 +44,7 @@ namespace Main_App.Views
 
     public class Vehicle
     {
+        public int id;
         public int routeShortName;
         public double lat;
         public double lon;
@@ -100,20 +96,54 @@ namespace Main_App.Views
             } 
         }
 
-
         public void SetVehicles(List<string[]> _vehicles)
         {
             foreach (string[] vehicle in _vehicles)
             {
-                Vehicle temp = new Vehicle();
-                temp.routeShortName = Convert.ToInt32(vehicle[1]);
-                temp.lat = Convert.ToDouble(vehicle[3]);
-                temp.lon = Convert.ToDouble(vehicle[4]);
-                temp.secsSinceReport = Convert.ToInt32(vehicle[5]);
-                temp.predictable = Convert.ToBoolean(vehicle[6]);
-                temp.heading = Convert.ToInt32(vehicle[7]);
-                temp.speed = Convert.ToInt32(vehicle[8]);
-                vehicles.Add(temp);
+                try
+                {
+                    if (vehicle.Length > 0)
+                    {
+                        Vehicle temp = new Vehicle();
+                        temp.id = Convert.ToInt32(vehicle[0]);
+                        temp.routeShortName = Convert.ToInt32(vehicle[1]);
+                        temp.lat = Convert.ToDouble(vehicle[3]);
+                        temp.lon = Convert.ToDouble(vehicle[4]);
+                        temp.secsSinceReport = Convert.ToInt32(vehicle[5]);
+                        temp.predictable = Convert.ToBoolean(vehicle[6]);
+                        temp.heading = Convert.ToInt32(vehicle[7]);
+                        temp.speed = Convert.ToInt32(vehicle[8]);
+                        vehicles.Add(temp);
+                    }
+                } catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
+            }
+        }
+
+        public void UpdateVehicles(List<string[]> _vehicles)
+        {
+            foreach (string[] vehicle in _vehicles)
+            {
+                try
+                {
+                    if (vehicle.Length > 1)
+                    {
+                        Vehicle temp = vehicles.Find(x => x.id.ToString().Equals(vehicle[0]));
+                        if (temp != null)
+                        {
+                            temp.lat = Convert.ToDouble(vehicle[3]);
+                            temp.lon = Convert.ToDouble(vehicle[4]);
+                            temp.secsSinceReport = Convert.ToInt32(vehicle[5]);
+                            temp.heading = Convert.ToInt32(vehicle[7]);
+                            temp.speed = Convert.ToInt32(vehicle[8]);
+                        }
+                    }
+                } catch(Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
             }
         }
     }
@@ -143,6 +173,7 @@ namespace Main_App.Views
         Location userLocation;
         bool routeMenuPressed = false;
         private readonly object routeLock = new object();
+        bool active_vehicle_tracking = false;
 
         // XAML Elements
         ImageButton[] select_buttons;
@@ -168,10 +199,63 @@ namespace Main_App.Views
             LoadTable();
             LoadMap();
             LoadRoutes();
+            ThreadPool.QueueUserWorkItem(StartVehicleTracking);
         }
 
 
+       /*
+        *   STARTS THREAD THAT REPEATS EVERY 10 SECONDS
+        *   LOOKS FOR ACTIVE VEHICLE TRACKING
+        */
+        private async void StartVehicleTracking(object state)
+        {
+            Device.StartTimer(TimeSpan.FromSeconds(35), () =>
+            {
+                if (active_vehicle_tracking)
+                {
+                    Task.Run(async () =>
+                    {
+                        var vehicles_list = await GetTableAsync("/api/GetVehicles?code=WfeofEpor3nyPSFsHTxl-xRGIqZRhX1C3g2Qh3dfoBPEAzFuRkweYw==");
+                        var vehicles = vehicles_list.Split('\n').Select(line => line.Split(',')).ToList();
 
+
+                        await Device.InvokeOnMainThreadAsync(() =>
+                        {
+                            full_ttc_list.UpdateVehicles(vehicles);
+                        });
+                        foreach (var pin in map.CustomPins)
+                        {
+                            try
+                            {
+                                var current_vehicle = full_ttc_list.vehicles.Find(x => x.id.ToString().Equals(pin.Name));
+
+                                if (current_vehicle != null)
+                                {
+                                    await Device.InvokeOnMainThreadAsync(async () =>
+                                    {
+                                        var startPos = pin.Position;
+                                        var endPos = new Position(current_vehicle.lat, current_vehicle.lon);
+                                        var animation = new Animation(v =>
+                                        {
+                                            var lat = startPos.Latitude + (v * (endPos.Latitude - startPos.Latitude));
+                                            var lon = startPos.Longitude + (v * (endPos.Longitude - startPos.Longitude));
+                                            pin.Position = new Position(lat, lon);
+                                        }, 0, 1); // animate from 0 (startPos) to 1 (endPos)
+                                        animation.Commit(this, "PinAnimation", 16, 5000, Easing.Linear);
+                                    });
+                                }
+                            } catch(Exception ex)
+                            {
+                                Debug.WriteLine(ex.Message);
+                            }
+                            
+
+                        }
+                    });
+                }
+                return true; // If true, keep running.
+            });
+        }
         #region Button / Element Commands
         private async Task SetUserMapLocation()
         {
@@ -184,6 +268,7 @@ namespace Main_App.Views
             Label routeNameLabel = _view.Children.FirstOrDefault(x => x is Label) as Label; // better than .First so it does not return an exception
 
             map.Pins.Clear();
+            map.CustomPins.Clear();
             foreach (var vehicle in full_ttc_list.vehicles)
             {
                 if (vehicle.routeShortName.ToString().Equals(routeNameLabel.Text))
@@ -193,12 +278,14 @@ namespace Main_App.Views
                         Type = PinType.Place,
                         Position = new Position(vehicle.lat, vehicle.lon),
                         Label = vehicle.routeShortName.ToString(),
-                        Name = vehicle.routeShortName.ToString(),
+                        Name = vehicle.id.ToString(),
                         Url = "http://xamarin.com/about/",
                     };
                     map.Pins.Add(pin);
+                    map.CustomPins.Add(pin);
                 }
             }
+            active_vehicle_tracking = true;
         }
 
         public void DimCurrentButton(object sender, EventArgs e)
@@ -405,10 +492,9 @@ namespace Main_App.Views
          */
         private async Task LoadTable()
         {
-            // temp variables, meant as a way to store the responses of the LINQ queries before merging them in the full_ttc_list
-            var stops_list = GetTable("/api/GetStops?code=qpgCdidyJyUqU2vJE66sxyDZYwYcpG3WR9EJ1aFb9F9DAzFu1S90uQ==").Split('\n').Select(line => line.Split(',')).ToList();
-            var routes_list = GetTable("/api/GetRoutes?code=SSJNZE5JtL4Tjah5lr1pi_3-TUBRXEnC4c2KaJ3aP5gHAzFuL2VJ3Q==").Split('\n').Select(line => line.Split(',')).ToList();
-            var vehicles_list = GetTable("/api/GetVehicles?code=WfeofEpor3nyPSFsHTxl-xRGIqZRhX1C3g2Qh3dfoBPEAzFuRkweYw==").Split('\n').Select(line => line.Split(',')).ToList();
+            var stops_list = GetTable("/api/GetStops?code=qpgCdidyJyUqU2vJE66sxyDZYwYcpG3WR9EJ1aFb9F9DAzFu1S90uQ==").ToString().Split('\n').Select(line => line.Split(',')).ToList();
+            var routes_list = GetTable("/api/GetRoutes?code=SSJNZE5JtL4Tjah5lr1pi_3-TUBRXEnC4c2KaJ3aP5gHAzFuL2VJ3Q==").ToString().Split('\n').Select(line => line.Split(',')).ToList();
+            var vehicles_list = GetTable("/api/GetVehicles?code=WfeofEpor3nyPSFsHTxl-xRGIqZRhX1C3g2Qh3dfoBPEAzFuRkweYw==").ToString().Split('\n').Select(line => line.Split(',')).ToList();
 
             full_ttc_list.SetStops(stops_list);
             full_ttc_list.SetRoutes(routes_list);
@@ -446,7 +532,6 @@ namespace Main_App.Views
                                 Name = stop.tripName,
                                 Url = "http://xamarin.com/about/",
                             };
-                            map.CustomPins.Add(pin);
                         }
                     }
                     map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(Convert.ToDouble(full_ttc_list.stops.First().lat), Convert.ToDouble(full_ttc_list.stops.First().lon)), Distance.FromMiles(1)));
@@ -515,18 +600,35 @@ namespace Main_App.Views
                     if (!seenRoutes.Contains(routeIdentifier))
                     {
                         seenRoutes.Add(routeIdentifier);
+
+                        Image layoutImage = new Image{ 
+                            BackgroundColor = Color.Transparent,
+                            HeightRequest = 32,
+                            WidthRequest = 32,
+                            HorizontalOptions = LayoutOptions.CenterAndExpand,
+                            VerticalOptions = LayoutOptions.CenterAndExpand,
+                        };
+
+                        // Setup Image beforehand based on the vehicle type.
+                        if (route.routeShortName.ToString().StartsWith("5")) // Streetcar!
+                        {
+                            layoutImage.Source = Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("train.png") : ImageSource.FromFile("Icons/train.png");
+                        } else if (route.routeShortName.ToString().StartsWith("3")) // Night Bus!
+                        {
+                            layoutImage.Source = Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("bloobus.png") : ImageSource.FromFile("Icons/bloobus.png");
+                        }
+                        else // Bus!
+                        {
+                            layoutImage.Source = Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("bus.png") : ImageSource.FromFile("Icons/bus.png");
+                        }
+
+                        // Setup stacklayout
                         var sub_layout = new StackLayout
                         {
                             Orientation = StackOrientation.Horizontal,
                             Children = {
-                        new Image
-                        {
-                            BackgroundColor = Color.Red,
-                            HeightRequest= 32,
-                            WidthRequest= 32,
-                            HorizontalOptions = LayoutOptions.CenterAndExpand,
-                            VerticalOptions = LayoutOptions.CenterAndExpand,
-                        },
+                        // REMINDER FOR IMAGES: Streetcars start with a "5", Night buses start with a "3"
+                        layoutImage,
                         new Label
                         {
                             Text = route.routeShortName.ToString(),
@@ -584,10 +686,10 @@ namespace Main_App.Views
         }
 
         /*
-         * TAKES SUBSTRING AND ADDS TO BASE AZURE STORAGE STRING
+         * TAKES SUBSTRING AND ADDS TO BASE AZURE STORAGE STRING ASYNC
          * RETURNS RESULT STRING (a bunch of .csv information)
          */
-        private string GetTable(string text)
+        private async Task<string> GetTableAsync(string text)
         {
             try
             {
@@ -596,7 +698,7 @@ namespace Main_App.Views
                     client.BaseAddress = new Uri("https://ttc-recieve-html.azurewebsites.net");
                     HttpResponseMessage response = client.GetAsync(text).Result;
                     response.EnsureSuccessStatusCode();
-                    Task<String> responsestring = response.Content.ReadAsStringAsync();
+                    Task<string> responsestring = response.Content.ReadAsStringAsync();
                     return responsestring.Result;
                 }
             }
@@ -609,6 +711,46 @@ namespace Main_App.Views
                 Console.WriteLine(ex.Message);
             }
             catch (TargetInvocationException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return "";
+        }
+
+        /*
+        * TAKES SUBSTRING AND ADDS TO BASE AZURE STORAGE STRING
+        * RETURNS RESULT STRING (a bunch of .csv information)
+        */
+        private string GetTable(string text)
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("https://ttc-recieve-html.azurewebsites.net");
+                    HttpResponseMessage response = client.GetAsync(text).Result;
+                    response.EnsureSuccessStatusCode();
+                    Task<string> responsestring = response.Content.ReadAsStringAsync();
+                    return responsestring.Result.ToString();
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (TaskCanceledException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (TargetInvocationException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
