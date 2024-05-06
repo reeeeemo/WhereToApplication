@@ -10,6 +10,7 @@ using System.Linq;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Diagnostics;
+using Main_App.ViewModels;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
@@ -150,7 +151,7 @@ namespace Main_App.Views
     #endregion
 
     #region Custom Map Classes
-    public class CustomPin : Pin
+    public class CustomPin : Xamarin.Forms.Maps.Pin
     {
         public string Name { get; set; }
         public string Url { get; set; }
@@ -183,11 +184,10 @@ namespace Main_App.Views
         public HomePage()
         {
             InitializeComponent();
-            BindingContext = this;
+            BindingContext = new HomePageViewModel();
 
             search_frame = (Frame)Content.FindByName("searchFrame");
 
-            LoadImages();
 
             _ = SetUserMapLocation();
 
@@ -381,7 +381,7 @@ namespace Main_App.Views
             SearchBar search_bar = (SearchBar)sender;
 
 
-            if (string.IsNullOrEmpty(search_bar.Text)) // redundant code I know, will put into a function at some point
+            if (string.IsNullOrEmpty(search_bar.Text)) 
             {
                 AddAllRoutesToList();
                 return;
@@ -541,26 +541,7 @@ namespace Main_App.Views
                 DisplayAlert(ex.Source, ex.Message, ex.StackTrace);
             }
         }
-        /*
-         * TAKES ALL BUTTONS AND LOADS THE IMAGES PLACED ON THEM
-        */
-        private void LoadImages()
-        {
-            string[] button_names =
-            {
-                "map_button",
-                "search",
-            };
 
-            select_buttons = new ImageButton[2];
-            for (int i = 0; i < button_names.Length; i++)
-            {
-                select_buttons[i] = (ImageButton)Content.FindByName(button_names[i]);
-            }
-            select_buttons[0].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("map_icon.png") : ImageSource.FromFile("Icons/map_icon.png"));
-            //select_buttons[1].Source = (Device.RuntimePlatform == Device.Android ? ImageSource.FromFile("") : ImageSource.FromFile(""));
-
-        }
 
         private async Task LoadRoutes()
         {
@@ -758,5 +739,11 @@ namespace Main_App.Views
         }
         #endregion
 
+
+        public async void OnEnterAddressTapped(object sender, EventArgs e)
+        {
+            await Navigation.PushAsync(new SearchPage() { BindingContext = this.BindingContext }, false);
+
+        }
     }
 }

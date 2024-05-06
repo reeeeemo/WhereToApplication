@@ -7,6 +7,7 @@ using Android.OS;
 using AndroidX.Core.Content;
 using Android;
 using Xamarin.Forms.Maps.Android;
+
 using Android.Gms.Maps;
 using Main_App.Droid;
 using Android.Content;
@@ -16,6 +17,8 @@ using Xamarin.Forms;
 using Xamarin.Forms.Platform.Android;
 using Xamarin.Forms.Maps;
 using Android.Gms.Maps.Model;
+using System.Threading.Tasks;
+using Main_App.Models;
 
 [assembly: ExportRenderer(typeof(CustomMap), typeof(CustomMapRenderer))]
 namespace Main_App.Droid
@@ -23,6 +26,10 @@ namespace Main_App.Droid
     public class CustomMapRenderer : MapRenderer, GoogleMap.IInfoWindowAdapter
     {
         List<CustomPin> customPins;
+
+        /*
+         * PUBLIC INTERFACES / CLASSES
+         */
 
         public CustomMapRenderer(Context context) : base(context)
         {
@@ -50,6 +57,8 @@ namespace Main_App.Droid
         {
             base.OnMapReady(map);
 
+            map.UiSettings.ZoomControlsEnabled = false;
+            map.UiSettings.MyLocationButtonEnabled = false;
             NativeMap.InfoWindowClick += OnInfoWindowClick;
             NativeMap.SetInfoWindowAdapter(this);
         }
@@ -136,10 +145,10 @@ namespace Main_App.Droid
         }
     }
 
-
     [Activity(Label = "Main_App", Icon = "@mipmap/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize )]
     public class MainActivity : global::Xamarin.Forms.Platform.Android.FormsAppCompatActivity
     {
+
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);

@@ -82,7 +82,7 @@
         <ShellContent Route="HomePage" ContentTemplate="{DataTemplate local:HomePage}" />
     </FlyoutItem>
     <FlyoutItem Title="Map" Icon="icon_feed.png">
-        <ShellContent Route="MapPage" ContentTemplate="{DataTemplate local:MapPage}" />
+        <ShellContent Route="SearchPage" ContentTemplate="{DataTemplate local:SearchPage}" />
     </FlyoutItem>
 
     <!-- When the Flyout is visible this will be a menu item you can tie a click behavior to  -->

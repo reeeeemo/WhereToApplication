@@ -4,25 +4,28 @@
              xmlns:xct="http://xamarin.com/schemas/2020/toolkit"
              x:Class="Main_App.Views.HomePage"
              xmlns:vm="clr-namespace:Main_App.ViewModels"
-             xmlns:maps="clr-namespace:Xamarin.Forms.Maps;assembly=Xamarin.Forms.Maps" 
+             xmlns:maps="clr-namespace:Xamarin.Forms.GoogleMaps;assembly=Xamarin.Forms.GoogleMaps"
+             NavigationPage.HasNavigationBar="false"
              xmlns:local="clr-namespace:Main_App.Views"
              Title="{Binding Title}">
-
-    <ContentPage.BindingContext>
-        <vm:HomePageViewModel />
-    </ContentPage.BindingContext>
+    
     <Grid>
         <AbsoluteLayout>
             <local:CustomMap x:Name="map" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="1,1,1,1"/>
-            <Frame x:Name="searchFrame" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="1,1,1,1" BackgroundColor="GhostWhite" Opacity="0.7"/>
-            <Frame Padding="0" BorderColor="Transparent" BackgroundColor="Transparent" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0.01,0.01,0.2,0.05">
-                <AbsoluteLayout>
-                    <ImageButton x:Name="map_button" CornerRadius="5" Padding="5" Aspect="AspectFit" AbsoluteLayout.LayoutFlags="All" 
-                                 AbsoluteLayout.LayoutBounds="0.07,0.5,0.45,0.85" Opacity="0.3"
-                                 BackgroundColor="DimGray" Clicked="DimCurrentButton"/>
-                    <ImageButton x:Name="search"  CornerRadius="5" AbsoluteLayout.LayoutFlags="All" 
-                                 AbsoluteLayout.LayoutBounds="0.93,0.5,0.45,0.85"
-                                 BackgroundColor="DimGray" Clicked="DimCurrentButton"/>
+            <Frame Padding="0" BorderColor="White" CornerRadius="5" BackgroundColor="Transparent" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0.5,0.02,0.5,0.05">
+                <AbsoluteLayout BackgroundColor="Wheat">
+                    <Label HorizontalOptions="CenterAndExpand"
+                           VerticalOptions="CenterAndExpand"
+                           AbsoluteLayout.LayoutFlags="All"
+                           AbsoluteLayout.LayoutBounds="0,0,1,1"
+                              LineBreakMode="TailTruncation"
+                              FontAttributes="Italic"
+                              FontSize="22"
+                              Text="WhereTo?"/>
+                    <AbsoluteLayout.GestureRecognizers>
+                        <TapGestureRecognizer
+                            Tapped="OnEnterAddressTapped"/>
+                    </AbsoluteLayout.GestureRecognizers>
                 </AbsoluteLayout>
             </Frame>
 
@@ -37,6 +40,6 @@
             </Frame>
                     
         </AbsoluteLayout>
+        
     </Grid>
-    
 </ContentPage>

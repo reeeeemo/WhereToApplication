@@ -12,9 +12,9 @@ using Xamarin.Forms.Xaml;
 
 namespace Main_App.Views
 {
-    public partial class MapPage : ContentPage
+    public partial class SearchPage : ContentPage
     {
-        public MapPage()
+        public SearchPage()
         {
             InitializeComponent();
         }
