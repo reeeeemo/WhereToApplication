@@ -18,5 +18,6 @@ namespace Main_App.Models
             Longitude = (double)jsonObject["result"]["geometry"]["location"]["lng"];
             Raw = jsonObject.ToString();
         }
+
     }
 }

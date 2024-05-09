@@ -6,8 +6,8 @@
              xmlns:vm="clr-namespace:Main_App.ViewModels"
              xmlns:maps="clr-namespace:Xamarin.Forms.GoogleMaps;assembly=Xamarin.Forms.GoogleMaps"
              NavigationPage.HasNavigationBar="false"
-             xmlns:local="clr-namespace:Main_App.Views"
-             Title="{Binding Title}">
+             xmlns:local="clr-namespace:Main_App.Views" x:DataType="vm:HomePageViewModel"
+             >
     
     <Grid>
         <AbsoluteLayout>
@@ -21,7 +21,7 @@
                               LineBreakMode="TailTruncation"
                               FontAttributes="Italic"
                               FontSize="22"
-                              Text="WhereTo?"/>
+                              Text="{Binding PlaceName}"/>
                     <AbsoluteLayout.GestureRecognizers>
                         <TapGestureRecognizer
                             Tapped="OnEnterAddressTapped"/>

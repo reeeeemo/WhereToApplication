@@ -203,10 +203,10 @@ namespace Main_App.Views
         }
 
 
-       /*
-        *   STARTS THREAD THAT REPEATS EVERY 10 SECONDS
-        *   LOOKS FOR ACTIVE VEHICLE TRACKING
-        */
+        /*
+         *   STARTS THREAD THAT REPEATS EVERY 10 SECONDS
+         *   LOOKS FOR ACTIVE VEHICLE TRACKING
+         */
         private async void StartVehicleTracking(object state)
         {
             Device.StartTimer(TimeSpan.FromSeconds(35), () =>
