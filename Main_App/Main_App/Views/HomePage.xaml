@@ -7,6 +7,7 @@
              xmlns:maps="clr-namespace:Xamarin.Forms.GoogleMaps;assembly=Xamarin.Forms.GoogleMaps"
              NavigationPage.HasNavigationBar="false"
              xmlns:local="clr-namespace:Main_App.Views" x:DataType="vm:HomePageViewModel"
+             xmlns:f9p="clr-namespace:Forms9Patch;assembly=Forms9Patch"
              >
     
     <Grid>
@@ -14,13 +15,15 @@
             <local:CustomMap x:Name="map" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="1,1,1,1"/>
             <Frame Padding="0" BorderColor="White" CornerRadius="5" BackgroundColor="Transparent" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0.5,0.02,0.5,0.05">
                 <AbsoluteLayout BackgroundColor="Wheat">
-                    <Label HorizontalOptions="CenterAndExpand"
+                    <f9p:Label HorizontalOptions="CenterAndExpand"
                            VerticalOptions="CenterAndExpand"
                            AbsoluteLayout.LayoutFlags="All"
                            AbsoluteLayout.LayoutBounds="0,0,1,1"
                               LineBreakMode="TailTruncation"
                               FontAttributes="Italic"
-                              FontSize="22"
+                              FontSize="50"
+                              Lines="1"
+                              AutoFit="Width"
                               Text="{Binding PlaceName}"/>
                     <AbsoluteLayout.GestureRecognizers>
                         <TapGestureRecognizer
@@ -29,6 +32,15 @@
                 </AbsoluteLayout>
             </Frame>
 
+            <Frame BorderColor="DarkGray" BackgroundColor="LightGray" IsVisible="{Binding IsRouteTracking}" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0.5,0.09,0.06,0.03">
+
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer 
+                        Tapped="OnStopRouteTracking">
+                    </TapGestureRecognizer>
+                </Frame.GestureRecognizers>
+            </Frame>
+            
             <ImageButton x:Name="MenuOpenButton" Source="right_arrow.png" RotationX="180" BackgroundColor="DimGray" 
                          Aspect="AspectFit" AbsoluteLayout.LayoutFlags="All" 
                          AbsoluteLayout.LayoutBounds="0,0.25,0.05,0.05"

@@ -181,10 +181,12 @@ namespace Main_App.Views
         StackLayout current_layouts;
         Frame search_frame;
 
+        HomePageViewModel viewModel = new HomePageViewModel();
+
         public HomePage()
         {
             InitializeComponent();
-            BindingContext = new HomePageViewModel();
+            BindingContext = viewModel;
 
             search_frame = (Frame)Content.FindByName("searchFrame");
 
@@ -744,6 +746,11 @@ namespace Main_App.Views
         {
             await Navigation.PushAsync(new SearchPage() { BindingContext = this.BindingContext }, false);
 
+        }
+
+        public void OnStopRouteTracking(object sender, EventArgs e)
+        {
+            viewModel.IsRouteTracking = false;
         }
     }
 }

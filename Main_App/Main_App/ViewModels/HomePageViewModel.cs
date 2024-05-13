@@ -103,6 +103,18 @@ namespace Main_App.ViewModels
         /* Lat / Lon Variables */
         string _originLat, _originLon;
 
+        // Route Tracking Variables
+        bool _isRouteTracking;
+        public bool IsRouteTracking
+        {
+            get => _isRouteTracking;
+            set
+            {
+                _isRouteTracking = value;
+                OnPropertyChanged(nameof(IsRouteTracking));
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
         #endregion
 
@@ -123,6 +135,7 @@ namespace Main_App.ViewModels
             GetPlaceDetailCommand = new Command<GooglePlaceAutoCompletePrediction>(async (param) => await GetPlacesDetail(param));
             Places = new ObservableCollection<GooglePlaceAutoCompletePrediction>();
             PlaceName = "WhereTo?";
+            IsRouteTracking = false;
         }
 
         public async Task GetPlacesByName(string placeText)
@@ -160,6 +173,7 @@ namespace Main_App.ViewModels
                     string _destLon = $"{place.Longitude}";
 
                     PlaceName = $"Selected: {place.Name}";
+                    IsRouteTracking = true;
 
                     if (_originLat == _destLat && _originLon == _destLon)
                     {
@@ -180,6 +194,8 @@ namespace Main_App.ViewModels
                 }
             }
         }
+
+
 
         void CleanFields()
         {
