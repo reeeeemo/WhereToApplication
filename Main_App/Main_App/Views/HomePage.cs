@@ -190,7 +190,6 @@ namespace Main_App.Views
 
             search_frame = (Frame)Content.FindByName("searchFrame");
 
-
             _ = SetUserMapLocation();
 
             if (userLocation != null)
@@ -751,6 +750,7 @@ namespace Main_App.Views
         public void OnStopRouteTracking(object sender, EventArgs e)
         {
             viewModel.IsRouteTracking = false;
+            viewModel.PlaceName = "WhereTo?";
         }
     }
 }

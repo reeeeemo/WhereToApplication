@@ -57,8 +57,8 @@ namespace Main_App.Droid
         {
             base.OnMapReady(map);
 
-            map.UiSettings.ZoomControlsEnabled = false;
-            map.UiSettings.MyLocationButtonEnabled = false;
+            map.UiSettings.ZoomControlsEnabled = true;
+            map.UiSettings.MyLocationButtonEnabled = true;
             NativeMap.InfoWindowClick += OnInfoWindowClick;
             NativeMap.SetInfoWindowAdapter(this);
         }
@@ -70,7 +70,7 @@ namespace Main_App.Droid
             marker.SetPosition(new LatLng(pin.Position.Latitude, pin.Position.Longitude));
             marker.SetTitle(pin.Label);
             marker.SetSnippet(pin.Address);
-            marker.SetIcon(BitmapDescriptorFactory.FromResource(Resource.Drawable.map_icon_small));
+            marker.SetIcon(BitmapDescriptorFactory.FromResource(Resource.Mipmap.circle_18));
             return marker;
         }
 

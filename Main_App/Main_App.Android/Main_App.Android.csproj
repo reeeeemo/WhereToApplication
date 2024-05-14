@@ -165,6 +165,40 @@
   <ItemGroup>
     <AndroidResource Include="Resources\mipmap-xxxhdpi\train.png" />
   </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\circle.png" />
+    <AndroidResource Include="Resources\drawable\cross_circle.png" />
+    <AndroidResource Include="Resources\drawable\search.png" />
+    <AndroidResource Include="Resources\drawable\star.png" />
+    <AndroidResource Include="Resources\mipmap-hdpi\circle.png" />
+    <AndroidResource Include="Resources\mipmap-hdpi\cross_circle.png" />
+    <AndroidResource Include="Resources\mipmap-hdpi\search.png" />
+    <AndroidResource Include="Resources\mipmap-hdpi\star.png" />
+    <AndroidResource Include="Resources\mipmap-mdpi\circle.png" />
+    <AndroidResource Include="Resources\mipmap-mdpi\cross_circle.png" />
+    <AndroidResource Include="Resources\mipmap-mdpi\search.png" />
+    <AndroidResource Include="Resources\mipmap-mdpi\star.png" />
+    <AndroidResource Include="Resources\mipmap-xhdpi\circle.png" />
+    <AndroidResource Include="Resources\mipmap-xhdpi\cross_circle.png" />
+    <AndroidResource Include="Resources\mipmap-xhdpi\search.png" />
+    <AndroidResource Include="Resources\mipmap-xhdpi\star.png" />
+    <AndroidResource Include="Resources\mipmap-xxhdpi\circle.png" />
+    <AndroidResource Include="Resources\mipmap-xxhdpi\cross_circle.png" />
+    <AndroidResource Include="Resources\mipmap-xxhdpi\search.png" />
+    <AndroidResource Include="Resources\mipmap-xxhdpi\star.png" />
+    <AndroidResource Include="Resources\mipmap-xxxhdpi\circle.png" />
+    <AndroidResource Include="Resources\mipmap-xxxhdpi\cross_circle.png" />
+    <AndroidResource Include="Resources\mipmap-xxxhdpi\search.png" />
+    <AndroidResource Include="Resources\mipmap-xxxhdpi\star.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\circle_18.png" />
+    <AndroidResource Include="Resources\mipmap-hdpi\circle_18.png" />
+    <AndroidResource Include="Resources\mipmap-mdpi\circle_18.png" />
+    <AndroidResource Include="Resources\mipmap-xhdpi\circle_18.png" />
+    <AndroidResource Include="Resources\mipmap-xxhdpi\circle_18.png" />
+    <AndroidResource Include="Resources\mipmap-xxxhdpi\circle_18.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
