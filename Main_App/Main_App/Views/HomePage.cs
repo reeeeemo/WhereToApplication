@@ -349,12 +349,63 @@ namespace Main_App.Views
         */
         public void FilterAllRoutesOnList(object searchBar)
         {
-            if (!(searchBar is SearchBar)) { return; }
+            if (!(searchBar is SearchBar _bar)) { return; }
 
-            var _bar = searchBar as SearchBar; 
+            var filterNumber = int.Parse(_bar.Text);
+            var matchingRoutes = new HashSet<Route>(full_ttc_list.routes.Where(i => i.routeShortName == filterNumber));
 
-                // Taking each stacklayout in the route search bar, other than the search bar itself or else cast failure!
-                foreach (var view in total_layouts.Skip(1)) // Always skip the first as it will always be the searchbar
+            var matchingLayouts = new HashSet<View>();
+
+            foreach (var view in total_layouts.Skip(1))
+            {
+                if (view is StackLayout _view)
+                {
+                    if (_view.Children.FirstOrDefault(x => x is Label) is Label temp && int.TryParse(temp.Text, out var number))
+                    {
+                        if (matchingRoutes.Any(route => route.routeShortName == number))
+                        {
+                            matchingLayouts.Add(_view);
+                        }
+                    }
+                }
+            }
+
+            // Synchronize ObservableCollection with HashSet
+            filteredRoutes.Clear();
+            foreach (var item in matchingLayouts)
+            {
+                filteredRoutes.Add(item as StackLayout);
+            }
+
+
+
+            /*if (!(searchBar is SearchBar _bar)) { return; }
+
+            var lowercase_text = _bar.Text.ToLower();
+            var filteredRoutesSet = new HashSet<StackLayout>(total_layouts.Where(i => i));
+
+            // Taking each view in the route search bar, other than the search bar itself or else cast failure!
+            foreach (var view in total_layouts.Skip(1))
+            {
+                if (view is StackLayout _view)
+                {
+                    if (_view.Children.FirstOrDefault(x => x is Label) is Label temp)
+                    {
+                        bool number_match = int.Parse(temp.Text) == filterNumber;
+                        if (number_match && !filteredRoutes.Contains(_view))
+                        {
+                            filteredRoutesSet.Add(_view);
+                        } else
+                        {
+                            filteredRoutesSet.Remove(_view);
+                        }
+                    }
+                }
+            } */
+
+            //filteredRoutes = filteredRouteSet.ToList() as ObservableCollection<StackLayout>;
+
+            /*foreach (var view in total_layouts.Skip(1)) // Always skip the first as it will always be the searchbar
                 {
 
                     var _view = view as StackLayout;
@@ -370,17 +421,16 @@ namespace Main_App.Views
                             filteredRoutes.Remove((StackLayout)view);
                         }
                     }
-                }
+                }*/
         }
 
         /*
          *  FILTER ROUTES BASED ON SEARCH QUERY + AVAILABLE CURRENT LAYOUTS
          *  ADDS / DELETES TO CURRENT LAYOUTS
         */
-        public void OnRouteSearchTextChanged(object sender, EventArgs e)
+        public async void OnRouteSearchTextChanged(object sender, EventArgs e)
         {
             SearchBar search_bar = (SearchBar)sender;
-
 
             if (string.IsNullOrEmpty(search_bar.Text)) 
             {
@@ -388,25 +438,34 @@ namespace Main_App.Views
                 return;
             }
 
-            lock(routeLock)
-            {
-                ThreadPool.QueueUserWorkItem(FilterAllRoutesOnList, search_bar);
-            }
+            await Task.Run(() => FilterAllRoutesOnList(search_bar));
 
-            lock (routeLock)
+            Device.BeginInvokeOnMainThread(() => 
             {
-                current_layouts.Children.Clear();
-                current_layouts.Children.Add(total_layouts.First()); // Adding the search bar!
-                if (filteredRoutes.Count != 0)
+                // If searchBar is not added already
+                if (!current_layouts.Children.Contains(total_layouts.First()))
                 {
-                    foreach (var view in filteredRoutes)
+                    current_layouts.Children.Insert(0, total_layouts.First());
+                }
+
+                // If the current layout does not have filtered routes in already, add it!
+                foreach (var view in filteredRoutes)
+                {
+                    if (!current_layouts.Children.Contains(view))
                     {
                         current_layouts.Children.Add(view);
                     }
                 }
 
-
-            }
+                // If the current layout already has it, and filtered does not, delete it!
+                foreach (var child in current_layouts.Children.ToList())
+                {
+                    if (child != total_layouts.First() && !filteredRoutes.Contains(child))
+                    {
+                        current_layouts.Children.Remove(child);
+                    }
+                }
+            });
         }
 
         private void SetMapPageActive()
@@ -533,12 +592,9 @@ namespace Main_App.Views
                                 Label = stop.tripName,
                                 Address = stop.stopName,
                                 Name = stop.tripName,
-                                Url = "http://xamarin.com/about/",
                             };
                         }
                     }
-                    // Change this to persons location!
-                    map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(Convert.ToDouble(full_ttc_list.stops.First().lat), Convert.ToDouble(full_ttc_list.stops.First().lon)), Distance.FromMiles(1)));
                 }
             } catch(Exception ex)
             {
