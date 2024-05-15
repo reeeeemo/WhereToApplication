@@ -9,16 +9,23 @@
              xmlns:local="clr-namespace:Main_App.Views" x:DataType="vm:HomePageViewModel"
              xmlns:f9p="clr-namespace:Forms9Patch;assembly=Forms9Patch"
              >
+
+    <NavigationPage.TitleView>
+        <StackLayout Background="Indigo"
+         HorizontalOptions="FillAndExpand" 
+         VerticalOptions="CenterAndExpand"/>
+    </NavigationPage.TitleView>
     
     <Grid>
         <AbsoluteLayout>
             <local:CustomMap x:Name="map" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="1,1,1,1"/>
-            <Frame Padding="0" BorderColor="White" CornerRadius="5" BackgroundColor="Transparent" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0.5,0.02,0.5,0.05">
-                <AbsoluteLayout BackgroundColor="Wheat">
+            <Frame Padding="0" BorderColor="MediumPurple" CornerRadius="5" BackgroundColor="Transparent" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0.5,0.02,0.5,0.05">
+                <AbsoluteLayout BackgroundColor="MediumPurple">
                     <f9p:Label HorizontalOptions="CenterAndExpand"
                            VerticalOptions="CenterAndExpand"
                            AbsoluteLayout.LayoutFlags="All"
                            AbsoluteLayout.LayoutBounds="0,0,1,1"
+                              TextColor="AntiqueWhite"
                               LineBreakMode="TailTruncation"
                               FontAttributes="Italic"
                               FontSize="20"
@@ -32,21 +39,18 @@
                 </AbsoluteLayout>
             </Frame>
 
-            <Frame BorderColor="DarkGray" BackgroundColor="LightGray" IsVisible="{Binding IsRouteTracking}" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0.5,0.09,0.06,0.03">
-                <Image x:Name="StopRouteTracking" Source="bloobus.png" Aspect="AspectFill" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="1,1,1,1"/>
-                <Frame.GestureRecognizers>
-                    <TapGestureRecognizer 
-                        Tapped="OnStopRouteTracking">
-                    </TapGestureRecognizer>
-                </Frame.GestureRecognizers>
-            </Frame>
-            
-            <ImageButton x:Name="MenuOpenButton" Source="right_arrow.png" RotationX="180" BackgroundColor="DimGray" 
+            <ImageButton x:Name="StopRouteTracking" Source="cross_circle.png" BackgroundColor="Transparent" 
+             Aspect="AspectFit" AbsoluteLayout.LayoutFlags="All" IsVisible="{Binding IsRouteTracking}"
+             AbsoluteLayout.LayoutBounds="0.5,0.08,0.1,0.03"
+             Clicked="OnStopRouteTracking"/>
+
+
+            <ImageButton x:Name="MenuOpenButton" Source="right_arrow_white.png" RotationX="180" BackgroundColor="MediumPurple"
                          Aspect="AspectFit" AbsoluteLayout.LayoutFlags="All" 
                          AbsoluteLayout.LayoutBounds="0,0.25,0.05,0.05"
                          Clicked="OpenMenu"/>
 
-            <Frame x:Name="RouteSelector"  Padding="0" Margin="0" BackgroundColor="Wheat" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="-1,0.475,0.5,0.5">
+            <Frame x:Name="RouteSelector"  Padding="0" Margin="0" BackgroundColor="MediumPurple" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="-1,0.475,0.5,0.5">
                   <ScrollView x:Name="RouteView" AbsoluteLayout.LayoutBounds="0,0,1,1" AbsoluteLayout.LayoutFlags="All">
                   </ScrollView>
             </Frame>

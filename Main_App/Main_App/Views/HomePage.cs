@@ -444,7 +444,9 @@ namespace Main_App.Views
                 }
             });
         }
-
+        /* 
+         * GET LOCATION VIA GEOLOCATION OF USER
+        */
         private async Task GetCurrentLocation()
         {
             try
@@ -535,6 +537,7 @@ namespace Main_App.Views
                             };
                         }
                     }
+                    // Change this to persons location!
                     map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(Convert.ToDouble(full_ttc_list.stops.First().lat), Convert.ToDouble(full_ttc_list.stops.First().lon)), Distance.FromMiles(1)));
                 }
             } catch(Exception ex)
@@ -615,6 +618,7 @@ namespace Main_App.Views
                         {
                             Text = route.routeShortName.ToString(),
                             FontSize = 24,
+                            TextColor = Color.AntiqueWhite,
                             HorizontalOptions= LayoutOptions.CenterAndExpand,
                             VerticalOptions= LayoutOptions.CenterAndExpand,
                             ClassId = "RouteText",
@@ -640,6 +644,9 @@ namespace Main_App.Views
             {
                 Placeholder = "Enter Route Num...",
                 FontSize = Device.GetNamedSize(NamedSize.Medium, typeof(SearchBar)),
+                TextColor = Color.AntiqueWhite,
+                CancelButtonColor = Color.AntiqueWhite,
+                PlaceholderColor = Color.AntiqueWhite,
             };
 
             search_bar.TextChanged += OnRouteSearchTextChanged;
@@ -744,7 +751,6 @@ namespace Main_App.Views
         public async void OnEnterAddressTapped(object sender, EventArgs e)
         {
             await Navigation.PushAsync(new SearchPage() { BindingContext = this.BindingContext }, false);
-
         }
 
         public void OnStopRouteTracking(object sender, EventArgs e)

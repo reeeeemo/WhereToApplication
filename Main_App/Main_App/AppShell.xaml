@@ -3,7 +3,8 @@
        xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
        xmlns:local="clr-namespace:Main_App.Views"
        Title="Main_App"
-       x:Class="Main_App.AppShell">
+       x:Class="Main_App.AppShell"
+       >
 
     <!--
         The overall app visual hierarchy is defined here, along with navigation.
@@ -78,12 +79,8 @@
         FlyoutDisplayOptions="AsMultipleItems" will create a separate flyout item for each child element    
         https://docs.microsoft.com/dotnet/api/xamarin.forms.shellgroupitem.flyoutdisplayoptions?view=xamarin-forms
     -->
-    <FlyoutItem Title="Home" Icon="icon_about.png">
-        <ShellContent Route="HomePage" ContentTemplate="{DataTemplate local:HomePage}" />
-    </FlyoutItem>
-    <FlyoutItem Title="Map" Icon="icon_feed.png">
-        <ShellContent Route="SearchPage" ContentTemplate="{DataTemplate local:SearchPage}" />
-    </FlyoutItem>
+    <ShellContent Route="HomePage" ContentTemplate="{DataTemplate local:HomePage}" />
+
 
     <!-- When the Flyout is visible this will be a menu item you can tie a click behavior to  -->
     <!-- <MenuItem Text="Logout" StyleClass="MenuItemLayoutStyle" Clicked="OnMenuItemClicked">

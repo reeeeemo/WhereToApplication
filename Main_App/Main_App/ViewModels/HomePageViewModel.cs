@@ -85,7 +85,7 @@ namespace Main_App.ViewModels
             {
                 _placeSelected = value;
                 if (_placeSelected != null)
-                    GetPlaceDetailCommand.Execute(_placeSelected);
+                GetPlaceDetailCommand.Execute(_placeSelected);
             }
         }
         public string _placeName;

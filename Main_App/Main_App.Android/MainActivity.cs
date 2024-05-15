@@ -156,6 +156,9 @@ namespace Main_App.Droid
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
             LoadApplication(new App());
+
+            Window.SetStatusBarColor(Android.Graphics.Color.Indigo);
+            Window.SetNavigationBarColor(Android.Graphics.Color.Indigo);
         }
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
