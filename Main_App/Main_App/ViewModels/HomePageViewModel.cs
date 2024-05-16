@@ -101,7 +101,7 @@ namespace Main_App.ViewModels
 
 
         /* Lat / Lon Variables */
-        string _originLat, _originLon;
+        public string _originLat, _originLon;
 
         // Route Tracking Variables
         bool _isRouteTracking;
@@ -112,6 +112,7 @@ namespace Main_App.ViewModels
             {
                 _isRouteTracking = value;
                 OnPropertyChanged(nameof(IsRouteTracking));
+                StartRouteTracking();
             }
         }
 
@@ -136,6 +137,11 @@ namespace Main_App.ViewModels
             Places = new ObservableCollection<GooglePlaceAutoCompletePrediction>();
             PlaceName = "WhereTo?";
             IsRouteTracking = false;
+        }
+
+        public virtual void StartRouteTracking()
+        {
+
         }
 
         public async Task GetPlacesByName(string placeText)

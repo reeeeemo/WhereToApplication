@@ -171,13 +171,23 @@ namespace Main_App.Views
         GTFS_List full_ttc_list = new GTFS_List();
 
         // Variables / Values
-        Location userLocation;
+        Location _userLocation;
+        public Location UserLocation
+        {
+            get => _userLocation;
+            set
+            {
+                _userLocation = value;
+                userLocationPin.Position = new Position(UserLocation.Latitude, UserLocation.Longitude);
+            }
+        }
         bool routeMenuPressed = false;
         private readonly object routeLock = new object();
         bool active_vehicle_tracking = false;
 
         // XAML Elements
         ImageButton[] select_buttons;
+        CustomPin userLocationPin;
         StackLayout current_layouts;
         Frame search_frame;
 
@@ -188,13 +198,25 @@ namespace Main_App.Views
             InitializeComponent();
             BindingContext = viewModel;
 
+            userLocationPin = new CustomPin();
+            userLocationPin.Label = "";
             search_frame = (Frame)Content.FindByName("searchFrame");
+
 
             _ = SetUserMapLocation();
 
-            if (userLocation != null)
+            if (UserLocation != null)
             {
-                map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(userLocation.Latitude, userLocation.Longitude), Distance.FromMiles(1)));
+                map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(UserLocation.Latitude, UserLocation.Longitude), Distance.FromMiles(1)));
+                map.Pins.Add(userLocationPin);
+                try
+                {
+                    //map.CustomPins.Add(userLocationPin);
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
 
             LoadTable();
@@ -203,9 +225,22 @@ namespace Main_App.Views
             ThreadPool.QueueUserWorkItem(StartVehicleTracking);
         }
 
+        private async void StartUserTracking(object state)
+        {
+            Device.StartTimer(TimeSpan.FromSeconds(5), () =>
+            {
+                Task.Run(async () => {
+                    await Device.InvokeOnMainThreadAsync(() =>
+                    {
+                        _ = SetUserMapLocation();
+                    });
+                });
+                return true;
+            });
+        }
 
         /*
-         *   STARTS THREAD THAT REPEATS EVERY 10 SECONDS
+         *   STARTS THREAD THAT REPEATS EVERY 35 SECONDS
          *   LOOKS FOR ACTIVE VEHICLE TRACKING
          */
         private async void StartVehicleTracking(object state)
@@ -270,6 +305,8 @@ namespace Main_App.Views
 
             map.Pins.Clear();
             map.CustomPins.Clear();
+            map.Pins.Add(userLocationPin);
+            map.CustomPins.Add(userLocationPin);
             foreach (var vehicle in full_ttc_list.vehicles)
             {
                 if (vehicle.routeShortName.ToString().Equals(routeNameLabel.Text))
@@ -377,34 +414,6 @@ namespace Main_App.Views
                 filteredRoutes.Add(item as StackLayout);
             }
 
-
-
-            /*if (!(searchBar is SearchBar _bar)) { return; }
-
-            var lowercase_text = _bar.Text.ToLower();
-            var filteredRoutesSet = new HashSet<StackLayout>(total_layouts.Where(i => i));
-
-            // Taking each view in the route search bar, other than the search bar itself or else cast failure!
-            foreach (var view in total_layouts.Skip(1))
-            {
-                if (view is StackLayout _view)
-                {
-                    if (_view.Children.FirstOrDefault(x => x is Label) is Label temp)
-                    {
-                        bool number_match = int.Parse(temp.Text) == filterNumber;
-                        if (number_match && !filteredRoutes.Contains(_view))
-                        {
-                            filteredRoutesSet.Add(_view);
-                        } else
-                        {
-                            filteredRoutesSet.Remove(_view);
-                        }
-                    }
-                }
-            } */
-
-            //filteredRoutes = filteredRouteSet.ToList() as ObservableCollection<StackLayout>;
-
             /*foreach (var view in total_layouts.Skip(1)) // Always skip the first as it will always be the searchbar
                 {
 
@@ -511,8 +520,8 @@ namespace Main_App.Views
             try
             {
                 var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
-                userLocation = await Geolocation.GetLastKnownLocationAsync();
-                userLocation = await Geolocation.GetLocationAsync(request);
+                UserLocation = await Geolocation.GetLastKnownLocationAsync();
+                UserLocation = await Geolocation.GetLocationAsync(request);
             }
             catch (FeatureNotSupportedException fnsEx)
             {
@@ -537,7 +546,7 @@ namespace Main_App.Views
             base.OnAppearing();
             await GetCurrentLocation();
 
-            if (userLocation != null)
+            if (UserLocation != null)
                 return;
         }
 
@@ -564,9 +573,9 @@ namespace Main_App.Views
 
             // Gets location and sorts vehicle list by the user location!
             await GetCurrentLocation();
-            if (userLocation != null)
+            if (UserLocation != null)
             {
-                CompareVehiclesByLocation(userLocation);
+                CompareVehiclesByLocation(UserLocation);
             }
         }
 

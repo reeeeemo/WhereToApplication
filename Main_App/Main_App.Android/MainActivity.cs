@@ -70,13 +70,14 @@ namespace Main_App.Droid
             marker.SetPosition(new LatLng(pin.Position.Latitude, pin.Position.Longitude));
             marker.SetTitle(pin.Label);
             marker.SetSnippet(pin.Address);
-            marker.SetIcon(BitmapDescriptorFactory.FromResource(Resource.Mipmap.circle_18));
+            marker.SetIcon(BitmapDescriptorFactory.FromResource(Resource.Mipmap.circle_24));
             return marker;
         }
 
         // Returns a View containing contents of info window
         public Android.Views.View GetInfoContents(Marker marker)
         {
+            return null;
             var inflator = Android.App.Application.Context.GetSystemService(Context.LayoutInflaterService) as Android.Views.LayoutInflater;
             if (inflator != null)
             {

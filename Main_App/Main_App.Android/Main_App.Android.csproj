@@ -207,6 +207,14 @@
     <AndroidResource Include="Resources\mipmap-xxhdpi\right_arrow_white.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\right_arrow_white.png" />
   </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\circle_24.png" />
+    <AndroidResource Include="Resources\mipmap-hdpi\circle_24.png" />
+    <AndroidResource Include="Resources\mipmap-mdpi\circle_24.png" />
+    <AndroidResource Include="Resources\mipmap-xhdpi\circle_24.png" />
+    <AndroidResource Include="Resources\mipmap-xxhdpi\circle_24.png" />
+    <AndroidResource Include="Resources\mipmap-xxxhdpi\circle_24.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
