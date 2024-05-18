@@ -11,6 +11,7 @@ using System.Collections.ObjectModel;
 using System.Threading;
 using System.Diagnostics;
 using Main_App.ViewModels;
+using Javax.Crypto.Interfaces;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
@@ -179,6 +180,8 @@ namespace Main_App.Views
             {
                 _userLocation = value;
                 userLocationPin.Position = new Position(UserLocation.Latitude, UserLocation.Longitude);
+                viewModel.OriginLat = UserLocation.Latitude.ToString();
+                viewModel.OriginLon = UserLocation.Longitude.ToString();
             }
         }
         bool routeMenuPressed = false;
@@ -209,23 +212,22 @@ namespace Main_App.Views
             {
                 map.MoveToRegion(MapSpan.FromCenterAndRadius(new Position(UserLocation.Latitude, UserLocation.Longitude), Distance.FromMiles(1)));
                 map.Pins.Add(userLocationPin);
-                try
-                {
-                    //map.CustomPins.Add(userLocationPin);
-                }
-                catch (Exception ex)
-                {
-
-                }
             }
 
             LoadTable();
             LoadMap();
             LoadRoutes();
             ThreadPool.QueueUserWorkItem(StartVehicleTracking);
+            ThreadPool.QueueUserWorkItem(StartUserTracking);
+            viewModel.RouteTracking += AddPolylineFromRoute;
         }
 
-        private async void StartUserTracking(object state)
+        public void AddPolylineFromRoute(object sender, EventArgs e)
+        {
+            map.MapElements.Add(viewModel.routeLine);
+        }
+
+        private void StartUserTracking(object state)
         {
             Device.StartTimer(TimeSpan.FromSeconds(5), () =>
             {

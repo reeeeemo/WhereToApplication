@@ -3,6 +3,7 @@ using Main_App.Models;
 using Main_App.Services;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -10,6 +11,8 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Essentials;
 using Xamarin.Forms;
+using Xamarin.Forms.Maps;
+using Xamarin.Forms.Shapes;
 
 namespace Main_App.ViewModels
 {
@@ -101,10 +104,11 @@ namespace Main_App.ViewModels
 
 
         /* Lat / Lon Variables */
-        public string _originLat, _originLon;
+        public string OriginLat, OriginLon;
 
         // Route Tracking Variables
-        bool _isRouteTracking;
+        bool _isRouteTracking; // Boolean for XAML values (doesn't really work with events :/)
+        public event EventHandler RouteTracking = delegate { }; // event for homepage.cs, since it should not be accessing this view model.
         public bool IsRouteTracking
         {
             get => _isRouteTracking;
@@ -112,9 +116,18 @@ namespace Main_App.ViewModels
             {
                 _isRouteTracking = value;
                 OnPropertyChanged(nameof(IsRouteTracking));
-                StartRouteTracking();
+                try
+                {
+                    RouteTracking.Invoke(this, EventArgs.Empty);
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
         }
+
+        public Xamarin.Forms.Maps.Polyline routeLine;
 
         public event PropertyChangedEventHandler PropertyChanged;
         #endregion
@@ -139,9 +152,19 @@ namespace Main_App.ViewModels
             IsRouteTracking = false;
         }
 
-        public virtual void StartRouteTracking()
+        void StartRouteTracking(string dest_lat, string dest_lon)
         {
+            var p1 = new Position(Convert.ToDouble(OriginLat), Convert.ToDouble(OriginLon));
+            var p2 = new Position(Convert.ToDouble(dest_lat), Convert.ToDouble(dest_lon));
 
+            routeLine = new Xamarin.Forms.Maps.Polyline()
+            {
+                StrokeColor = Color.Red,
+                StrokeWidth = 12,
+            };
+            routeLine.Geopath.Add(p1);
+            routeLine.Geopath.Add(p2);
+            IsRouteTracking = true;
         }
 
         public async Task GetPlacesByName(string placeText)
@@ -169,8 +192,8 @@ namespace Main_App.ViewModels
                 if (_isOriginFocused) // this doesnt work atm
                 {
                     OriginText = place.Name;
-                    _originLat = $"{place.Latitude}";
-                    _originLon = $"{place.Longitude}";
+                    OriginLat = $"{place.Latitude}";
+                    OriginLon = $"{place.Longitude}";
                     _isOriginFocused = false;
                 }
                 else
@@ -179,9 +202,9 @@ namespace Main_App.ViewModels
                     string _destLon = $"{place.Longitude}";
 
                     PlaceName = $"Selected: {place.Name}";
-                    IsRouteTracking = true;
+                    StartRouteTracking(_destLat, _destLon);
 
-                    if (_originLat == _destLat && _originLon == _destLon)
+                    if (OriginLat == _destLat && OriginLon == _destLon)
                     {
                         await App.Current.MainPage.DisplayAlert("Error", "Origin route should be different than destination route", "Ok");
                     }
