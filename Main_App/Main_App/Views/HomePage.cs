@@ -224,6 +224,7 @@ namespace Main_App.Views
 
         public void AddPolylineFromRoute(object sender, EventArgs e)
         {
+            map.MapElements.Clear();
             map.MapElements.Add(viewModel.routeLine);
         }
 

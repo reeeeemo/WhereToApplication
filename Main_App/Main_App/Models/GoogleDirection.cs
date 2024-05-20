@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 /* FORKED FROM https://gist.github.com/rdelrosario/3bb8d02c3a3c679d44c1387c9a0051fd */

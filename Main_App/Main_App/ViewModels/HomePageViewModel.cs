@@ -2,6 +2,7 @@
 using Main_App.Models;
 using Main_App.Services;
 using Newtonsoft.Json;
+using P42.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -154,16 +155,29 @@ namespace Main_App.ViewModels
 
         void StartRouteTracking(string dest_lat, string dest_lon)
         {
-            var p1 = new Position(Convert.ToDouble(OriginLat), Convert.ToDouble(OriginLon));
-            var p2 = new Position(Convert.ToDouble(dest_lat), Convert.ToDouble(dest_lon));
-
             routeLine = new Xamarin.Forms.Maps.Polyline()
             {
                 StrokeColor = Color.Red,
                 StrokeWidth = 12,
             };
+
+            var directions = googleMapsApi.GetDirections(OriginLat, OriginLon, dest_lat, dest_lon).Result;
+
+            foreach (var step in directions.Routes[0].Legs[0].Steps)
+            {
+                var decodedPolylines = googleMapsApi.DecodePolyline(step.Polyline.Points);
+                foreach (var pos in decodedPolylines)
+                {
+                    routeLine.Geopath.Add(pos);
+                }
+            }
+
+            /*var p1 = new Position(Convert.ToDouble(OriginLat), Convert.ToDouble(OriginLon));
+            var p2 = new Position(Convert.ToDouble(dest_lat), Convert.ToDouble(dest_lon));
+
+
             routeLine.Geopath.Add(p1);
-            routeLine.Geopath.Add(p2);
+            routeLine.Geopath.Add(p2); */
             IsRouteTracking = true;
         }
 
