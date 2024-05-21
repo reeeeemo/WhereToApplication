@@ -1,4 +1,5 @@
 ﻿using Android.Telephony;
+using Java.Util.Functions;
 using Main_App.Models;
 using Main_App.Services;
 using Newtonsoft.Json;
@@ -12,7 +13,8 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Essentials;
 using Xamarin.Forms;
-using Xamarin.Forms.Maps;
+using Xamarin.Forms.GoogleMaps;
+using xMaps = Xamarin.Forms.Maps;
 using Xamarin.Forms.Shapes;
 
 namespace Main_App.ViewModels
@@ -110,6 +112,7 @@ namespace Main_App.ViewModels
         // Route Tracking Variables
         bool _isRouteTracking; // Boolean for XAML values (doesn't really work with events :/)
         public event EventHandler RouteTracking = delegate { }; // event for homepage.cs, since it should not be accessing this view model.
+
         public bool IsRouteTracking
         {
             get => _isRouteTracking;
@@ -153,11 +156,33 @@ namespace Main_App.ViewModels
             IsRouteTracking = false;
         }
 
-        void StartRouteTracking(string dest_lat, string dest_lon)
+        public xMaps.Polyline GetRoutePolyline(string oLat, string oLon, string dLat, string dLon)
         {
-            routeLine = new Xamarin.Forms.Maps.Polyline()
+            xMaps.Polyline temp = new xMaps.Polyline()
             {
                 StrokeColor = Color.Red,
+                StrokeWidth = 12,
+            };
+
+            var directions = googleMapsApi.GetDirections(oLat, oLon, dLat, dLon).Result;
+
+            foreach (var step in directions.Routes[0].Legs[0].Steps)
+            {
+                var decodedPolylines = googleMapsApi.DecodePolyline(step.Polyline.Points);
+                foreach (var pos in decodedPolylines)
+                {
+                    temp.Geopath.Add(pos);
+                }
+            }
+
+            return temp;
+        }
+
+        void StartRouteTracking(string dest_lat, string dest_lon)
+        {
+            routeLine = new xMaps.Polyline()
+            {
+                StrokeColor = Color.Green,
                 StrokeWidth = 12,
             };
 
@@ -171,13 +196,6 @@ namespace Main_App.ViewModels
                     routeLine.Geopath.Add(pos);
                 }
             }
-
-            /*var p1 = new Position(Convert.ToDouble(OriginLat), Convert.ToDouble(OriginLon));
-            var p2 = new Position(Convert.ToDouble(dest_lat), Convert.ToDouble(dest_lon));
-
-
-            routeLine.Geopath.Add(p1);
-            routeLine.Geopath.Add(p2); */
             IsRouteTracking = true;
         }
 

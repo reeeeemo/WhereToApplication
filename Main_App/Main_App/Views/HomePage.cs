@@ -12,6 +12,7 @@ using System.Threading;
 using System.Diagnostics;
 using Main_App.ViewModels;
 using Javax.Crypto.Interfaces;
+using Android.Text.Style;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
@@ -26,7 +27,7 @@ namespace Main_App.Views
         public Guid Id { get; set; }
         public string Name { get; set; }
     }
-
+    
     public class Stop
     {
         public string tripName;
@@ -225,7 +226,10 @@ namespace Main_App.Views
         public void AddPolylineFromRoute(object sender, EventArgs e)
         {
             map.MapElements.Clear();
-            map.MapElements.Add(viewModel.routeLine);
+            if (viewModel.IsRouteTracking)
+            {
+                map.MapElements.Add(viewModel.routeLine);
+            }
         }
 
         private void StartUserTracking(object state)
@@ -305,15 +309,18 @@ namespace Main_App.Views
         {
             StackLayout _view = sender as StackLayout;
             Label routeNameLabel = _view.Children.FirstOrDefault(x => x is Label) as Label; // better than .First so it does not return an exception
+            int currentRoute = 0;
 
             map.Pins.Clear();
             map.CustomPins.Clear();
+            map.MapElements.Clear();
             map.Pins.Add(userLocationPin);
             map.CustomPins.Add(userLocationPin);
             foreach (var vehicle in full_ttc_list.vehicles)
             {
                 if (vehicle.routeShortName.ToString().Equals(routeNameLabel.Text))
                 {
+                    currentRoute = vehicle.routeShortName;
                     CustomPin pin = new CustomPin
                     {
                         Type = PinType.Place,
@@ -327,6 +334,20 @@ namespace Main_App.Views
                 }
             }
             active_vehicle_tracking = true;
+
+            // Activate Route Polyline
+            if (currentRoute != 0)
+            {
+                //var stops = full_ttc_list.stops.FindAll(x => x.routeShortName == currentRoute);
+                var stops = full_ttc_list.stops
+                    .Where(x => x.routeShortName == currentRoute)
+                    .GroupBy(x => new { x.stopName })
+                    .Select(g => g.First())
+                    .ToList();
+
+                var line = viewModel.GetRoutePolyline(stops.First().lat.ToString(), stops.First().lon.ToString(), stops.Last().lat.ToString(), stops.Last().lon.ToString());
+                map.MapElements.Add(line);
+            }
         }
 
         public void DimCurrentButton(object sender, EventArgs e)

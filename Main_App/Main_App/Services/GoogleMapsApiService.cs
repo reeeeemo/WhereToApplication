@@ -89,7 +89,7 @@ namespace Main_App.Services
             GoogleDirection result = null;
             using (var httpClient = CreateClient())
             {
-                var response = await httpClient.GetAsync($"api/directions/json?origin={oLat},{oLon}&destination={dLat},{oLon}&key={_gmapsKey}").ConfigureAwait(false);
+                var response = await httpClient.GetAsync($"api/directions/json?origin={oLat},{oLon}&destination={dLat},{dLon}&key={_gmapsKey}").ConfigureAwait(false);
                 if (response.IsSuccessStatusCode)
                 {
                     var JSON = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
