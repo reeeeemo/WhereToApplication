@@ -1,8 +1,5 @@
 ﻿using Main_App.Services;
-using Main_App.Views;
-using System;
 using Xamarin.Forms;
-using Xamarin.Forms.Xaml;
 
 namespace Main_App
 {
@@ -15,6 +12,7 @@ namespace Main_App
 
             DependencyService.Register<MockDataStore>();
             MainPage = new AppShell();
+            SecretStorage.Init();
         }
 
         protected override void OnStart()

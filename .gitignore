@@ -4,6 +4,10 @@
 # Azure Functions localsettings file
 local.settings.json
 
+# Files
+Secrets.cs
+
+
 # User-specific files
 *.suo
 *.user
@@ -262,3 +266,7 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+
+# Mobile.BuildTools
+appsettings.json
+appsettings.*.json

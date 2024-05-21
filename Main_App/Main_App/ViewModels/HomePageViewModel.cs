@@ -1,11 +1,6 @@
-﻿using Android.Telephony;
-using Java.Util.Functions;
-using Main_App.Models;
+﻿using Main_App.Models;
 using Main_App.Services;
-using Newtonsoft.Json;
-using P42.Utils;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -13,9 +8,8 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Essentials;
 using Xamarin.Forms;
-using Xamarin.Forms.GoogleMaps;
 using xMaps = Xamarin.Forms.Maps;
-using Xamarin.Forms.Shapes;
+
 
 namespace Main_App.ViewModels
 {
@@ -148,7 +142,8 @@ namespace Main_App.ViewModels
         /* MAIN HOME PAGE MODEL */
         public HomePageViewModel()
         {
-            GoogleMapsApiService.Initialize("AIzaSyD3a7hyJLIntsMVaPMqw3x-Ptkt5xcYvso");
+            string token = SecureStorage.GetAsync("googleMapsAuthKey").Result;
+            GoogleMapsApiService.Initialize(token);
             GetPlacesCommand = new Command<string>(async (param) => await GetPlacesByName(param));
             GetPlaceDetailCommand = new Command<GooglePlaceAutoCompletePrediction>(async (param) => await GetPlacesDetail(param));
             Places = new ObservableCollection<GooglePlaceAutoCompletePrediction>();

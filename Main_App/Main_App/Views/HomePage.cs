@@ -11,8 +11,6 @@ using System.Collections.ObjectModel;
 using System.Threading;
 using System.Diagnostics;
 using Main_App.ViewModels;
-using Javax.Crypto.Interfaces;
-using Android.Text.Style;
 
 [assembly: ExportFont("Lobster-Regular.ttf", Alias = "Lobster")]
 
