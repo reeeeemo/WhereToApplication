@@ -18,18 +18,18 @@ This is a TTC Vehicle / Route tracker that will show you the routes and vehicles
 - Connect it to Visual studio (Device: by USB, Emulator: Visual Studio's built-in emulator)
 - Click "Start" or "Run", and you got it working!
 
-#### SAMPLE IMAGES
--*Home Screen*
+### SAMPLE IMAGES
+#### *Home Screen*
 ![Home screen on android phone](SampleImages/home_screen.png)
--*Vehicle Screen*
+#### *Vehicle Screen*
 ![Home screen on android phone with tab opened up](SampleImages/vehicle_screen.png)
--*Vehicle Search Screen*
+#### *Vehicle Search Screen*
 ![Home screen on android phone with tab opened up + bus image and number](SampleImages/vehicle_search_screen.png)
--*TTC Route List + Live Vehicle Tracking*
+#### *TTC Route List + Live Vehicle Tracking*
 ![Home screen on android phone with vehicles and red route line](SampleImages/vehicle_nav.png)
--*Route Search Screen Before Text*
+#### *Route Search Screen Before Text*
 ![Search screen on android phone with no text](SampleImages/search_screen_before_text.png)
--*Route Search Screen After Text*
+#### *Route Search Screen After Text*
 ![Search screen on android phone with text and prompts based on text](SampleImages/search_screen_after_text.png)
--*Route Navigation*
+#### *Route Navigation*
 ![Home screen on android phone with user location and green route line](SampleImages/route.png)
